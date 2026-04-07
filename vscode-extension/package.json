@@ -1,0 +1,165 @@
+{
+  "name": "llmrag",
+  "displayName": "LLM RAG",
+  "description": "Local RAG knowledge base assistant powered by llmragd",
+  "version": "1.0.0",
+  "publisher": "llmrag",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["AI", "Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "llmrag.daemonStart",
+        "title": "LLM RAG: Start Daemon"
+      },
+      {
+        "command": "llmrag.daemonStop",
+        "title": "LLM RAG: Stop Daemon"
+      },
+      {
+        "command": "llmrag.daemonStatus",
+        "title": "LLM RAG: Daemon Status"
+      },
+      {
+        "command": "llmrag.workspaceCreate",
+        "title": "LLM RAG: Create Workspace"
+      },
+      {
+        "command": "llmrag.workspaceDelete",
+        "title": "LLM RAG: Delete Workspace",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "llmrag.workspaceSetActive",
+        "title": "LLM RAG: Set Active Workspace",
+        "icon": "$(check)"
+      },
+      {
+        "command": "llmrag.workspaceRefresh",
+        "title": "LLM RAG: Refresh Workspaces",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "llmrag.indexCurrentFile",
+        "title": "LLM RAG: Index Current File"
+      },
+      {
+        "command": "llmrag.indexFolder",
+        "title": "LLM RAG: Index Folder",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "llmrag.queryWorkspace",
+        "title": "LLM RAG: Query Workspace"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "llmrag-sidebar",
+          "title": "LLM RAG",
+          "icon": "$(database)"
+        }
+      ]
+    },
+    "views": {
+      "llmrag-sidebar": [
+        {
+          "id": "llmrag.workspacesView",
+          "name": "Workspaces",
+          "icon": "$(database)",
+          "contextualTitle": "LLM RAG Workspaces"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "llmrag.workspaceCreate",
+          "when": "view == llmrag.workspacesView",
+          "group": "navigation"
+        },
+        {
+          "command": "llmrag.workspaceRefresh",
+          "when": "view == llmrag.workspacesView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "llmrag.workspaceSetActive",
+          "when": "view == llmrag.workspacesView && viewItem == workspace",
+          "group": "inline"
+        },
+        {
+          "command": "llmrag.indexFolder",
+          "when": "view == llmrag.workspacesView && viewItem == workspace",
+          "group": "inline"
+        },
+        {
+          "command": "llmrag.workspaceDelete",
+          "when": "view == llmrag.workspacesView && viewItem == workspace",
+          "group": "inline"
+        }
+      ]
+    },
+    "chatParticipants": [
+      {
+        "id": "llmrag.chat",
+        "name": "llmrag",
+        "description": "Ask questions against your indexed RAG knowledge base",
+        "isSticky": false
+      }
+    ],
+    "configuration": {
+      "title": "LLM RAG",
+      "properties": {
+        "llmrag.daemonPort": {
+          "type": "number",
+          "default": 7474,
+          "description": "Port the llmragd daemon listens on"
+        },
+        "llmrag.daemonHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host the llmragd daemon listens on"
+        },
+        "llmrag.activeWorkspace": {
+          "type": "string",
+          "default": "",
+          "description": "Name of the currently active workspace used for chat queries"
+        },
+        "llmrag.autoIndex": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically re-index files in the active workspace on save"
+        },
+        "llmrag.autoIndexGlob": {
+          "type": "string",
+          "default": "**/*.{md,txt,pdf,docx}",
+          "description": "Glob pattern for files to auto-index when llmrag.autoIndex is enabled"
+        },
+        "llmrag.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Path to the Python executable used to launch the daemon"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.0"
+  }
+}

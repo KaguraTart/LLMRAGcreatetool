@@ -316,9 +316,10 @@ class ChromaStore(VectorStoreBase):
         query_embedding: np.ndarray,
         k: int = 5,
         filter_expr: dict = None,
+        score_threshold: float = 0.0,
     ) -> list[dict]:
         collection = self._get_collection()
-        
+
         results = collection.query(
             query_embeddings=[query_embedding.tolist()],
             n_results=k,
@@ -328,13 +329,16 @@ class ChromaStore(VectorStoreBase):
         
         output = []
         for i in range(len(results["ids"][0])):
+            score = 1.0 - results["distances"][0][i]  # Chroma stores distance
+            if score < score_threshold:
+                continue
             output.append({
                 "id": results["ids"][0][i],
                 "content": results["documents"][0][i],
-                "score": 1.0 - results["distances"][0][i],  # Chroma stores distance
+                "score": score,
                 "metadata": results["metadatas"][0][i]
             })
-        
+
         return output
     
     def insert_batch(self, items: list[dict]):

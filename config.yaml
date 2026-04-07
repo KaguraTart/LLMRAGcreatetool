@@ -209,3 +209,12 @@ knowledge_base:
 logging:
   level: "INFO"
   file: "./logs/ragtools.log"
+
+# ============================================================
+# Daemon Configuration (llmragd)
+# ============================================================
+daemon:
+  host: "127.0.0.1"
+  port: 7474
+  workspace_dir: "~/.llmrag"       # base directory for workspaces and PID file
+  default_vector_store: "chroma"   # chroma (default, no external service) or qdrant
