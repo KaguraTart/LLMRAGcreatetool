@@ -1,4 +1,4 @@
-# LLM RAGtools
+# LLMRAGcreatetool
 
 > 基于开源工具构建的 RAG 知识库处理工具链。覆盖 PDF 解析 → 智能分块 → 实体抽取 → 分类 → 向量索引全流程。
 
@@ -136,7 +136,7 @@ Claude Code CLI 作为 Agent 使用时，本质上是通过官方 API 调用 Cla
 ## 项目结构
 
 ```
-LLM RAGtools/
+LLMRAGcreatetool/
 ├── config.yaml              # 全局配置
 ├── requirements.txt
 ├── README.md
