@@ -12,6 +12,8 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+RERANK_MAX_PASSAGE_LENGTH = 600  # Keeps rerank prompts bounded while preserving enough passage context.
+
 
 class Retriever:
     def __init__(
@@ -24,6 +26,8 @@ class Retriever:
         bm25_weight: float = 0.3,
         rerank_enabled: bool = False,
         rerank_top_n: int = 20,
+        bm25_k1: float = 1.5,
+        bm25_b: float = 0.75,
     ):
         self.vector_store = vector_store
         self.embedding_model = embedding_model
@@ -33,6 +37,8 @@ class Retriever:
         self.bm25_weight = bm25_weight
         self.rerank_enabled = rerank_enabled
         self.rerank_top_n = rerank_top_n
+        self.bm25_k1 = bm25_k1
+        self.bm25_b = bm25_b
 
         self._docs_by_id: dict[str, dict] = {}
         self._doc_terms: dict[str, list[str]] = {}
@@ -178,8 +184,8 @@ class Retriever:
         if not q_terms:
             return []
 
-        k1 = 1.5
-        b = 0.75
+        k1 = self.bm25_k1
+        b = self.bm25_b
 
         scores = {}
         for doc_id, terms in self._doc_terms.items():
@@ -265,7 +271,7 @@ class Retriever:
             "Candidates:",
         ]
         for c in top:
-            prompt.append(f"- id={c.get('id')}: {c.get('content','')[:600]}")
+            prompt.append(f"- id={c.get('id')}: {c.get('content','')[:RERANK_MAX_PASSAGE_LENGTH]}")
 
         try:
             resp = self.provider.generate("\n".join(prompt), temperature=0.0, max_tokens=800, json_mode=True)

@@ -94,7 +94,7 @@ def build_registry_from_config(config) -> ProviderRegistry:
                 f"[providers] Failed to init {provider_name}: {e}")
 
     # Ensure active provider exists
-    if registry.list() and registry.active_name not in registry.list():
+    if registry.list() and (not registry.active_name or registry.active_name not in registry.list()):
         registry.switch(registry.list()[0])
 
     return registry

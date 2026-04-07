@@ -12,6 +12,10 @@ from ..utils.token_counter import count_tokens
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_EMPTY_QUERY_RELEVANCE = 0.7
+DEFAULT_NO_SOURCE_GROUNDING = 0.5
+DEFAULT_NO_SOURCE_CITATION_COVERAGE = 0.5
+
 
 @dataclass
 class QualityScore:
@@ -191,17 +195,18 @@ class AnswerQualityScorer:
         q_terms = {t.lower() for t in re.split(r"\W+", q) if len(t) > 2}
         a_terms = {t.lower() for t in re.split(r"\W+", answer) if len(t) > 2}
 
-        relevance = min(1.0, len(q_terms & a_terms) / max(len(q_terms), 1)) if q_terms else 0.7
+        relevance = min(1.0, len(q_terms & a_terms) / len(q_terms)) if q_terms else DEFAULT_EMPTY_QUERY_RELEVANCE
 
         source_text = "\n".join((s.get("content", "") or "")[:1200] for s in sources)
         if source_text:
             source_terms = {t.lower() for t in re.split(r"\W+", source_text) if len(t) > 2}
             grounding = min(1.0, len(a_terms & source_terms) / max(len(a_terms), 1)) if a_terms else 0.0
         else:
-            grounding = 0.5
+            grounding = DEFAULT_NO_SOURCE_GROUNDING
 
         citation_count = len(re.findall(r"\[SOURCE_\d+\]", answer))
-        citation_coverage = min(1.0, citation_count / max(len(sources), 1)) if sources else 0.5
+        # If there are no retrieved sources, use neutral fallback instead of penalizing to zero.
+        citation_coverage = min(1.0, citation_count / max(len(sources), 1)) if sources else DEFAULT_NO_SOURCE_CITATION_COVERAGE
 
         readability = 1.0 if ans_tokens >= 20 else ans_tokens / 20.0
         faithfulness = (grounding + citation_coverage) / 2

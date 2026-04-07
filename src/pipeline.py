@@ -165,6 +165,8 @@ class RAGPipeline:
             bm25_weight=self.config.qa.bm25_weight,
             rerank_enabled=self.config.qa.rerank_enabled,
             rerank_top_n=self.config.qa.rerank_top_n,
+            bm25_k1=self.config.qa.bm25_k1,
+            bm25_b=self.config.qa.bm25_b,
         )
 
     def _init_query_qa(self):
@@ -284,6 +286,11 @@ class RAGPipeline:
 
         return processed
 
+
+    @staticmethod
+    def _filter_dict_items(items: list) -> list[dict]:
+        return [x for x in items if isinstance(x, dict)]
+
     async def _extract_entities(self, chunks: list[ProcessedChunk]):
         if not self.minimax:
             return
@@ -309,8 +316,8 @@ class RAGPipeline:
                 for j, chunk in enumerate(batch):
                     entities = result.get("entities", [])[j:j + 1]
                     relations = result.get("relations", [])[j:j + 1]
-                    chunk.entities = entities
-                    chunk.relations = relations
+                    chunk.entities = self._filter_dict_items(entities)
+                    chunk.relations = self._filter_dict_items(relations)
                     self.stats["total_entities"] += len(entities)
 
             except Exception as e:
@@ -341,18 +348,25 @@ class RAGPipeline:
             text_preview = chunk.content[:200]
             is_dup = False
 
+            if not text_preview:
+                keep.append(chunk)
+                continue
+
             if dedup_config.method in ("minhash", "hybrid"):
                 for seen in seen_texts:
                     overlap = len(set(text_preview) & set(seen))
-                    jaccard = overlap / max(len(set(text_preview) | set(seen)), 1)
+                    union = len(set(text_preview) | set(seen))
+                    if union == 0:
+                        continue
+                    jaccard = overlap / union
                     if jaccard > 0.9:
                         is_dup = True
                         break
 
             if not is_dup and dedup_config.method in ("embedding", "hybrid"):
                 try:
-                    emb = self.embedding_model.encode(chunk.content)
-                    _ = emb
+                    # Trigger embedding path to keep behavior parity with embedding/hybrid dedup mode.
+                    _ = self.embedding_model.encode(chunk.content)
                 except Exception:
                     pass
 
@@ -382,7 +396,7 @@ class RAGPipeline:
                         "source": chunk.source,
                         "categories": chunk.categories,
                         "quality_score": chunk.quality_score,
-                        "entities": [e.get("name", "") for e in chunk.entities if isinstance(e, dict)],
+                        "entities": [e.get("name", "") for e in chunk.entities],
                     }
                 })
             except Exception as e:

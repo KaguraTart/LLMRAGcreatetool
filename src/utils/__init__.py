@@ -13,6 +13,7 @@ def setup_logging(level: str = "INFO"):
 
 
 async def cmd_extract(args):
+    """Extract command; imports are local to avoid package import cycles."""
     setup_logging(args.log)
     from ..config import Config
     from ..pipeline import RAGPipeline
@@ -31,6 +32,7 @@ async def cmd_extract(args):
 
 
 async def cmd_process(args):
+    """Process command; imports are local to avoid package import cycles."""
     setup_logging(args.log)
     from ..config import Config
     from ..pipeline import RAGPipeline
@@ -49,6 +51,7 @@ async def cmd_process(args):
 
 
 async def cmd_query(args):
+    """Query command; imports are local to avoid package import cycles."""
     setup_logging(args.log)
     from ..config import Config
     from ..pipeline import RAGPipeline

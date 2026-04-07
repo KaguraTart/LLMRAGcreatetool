@@ -150,6 +150,8 @@ class QAConfig(BaseModel):
     retrieval_mode: str = "vector"   # vector / bm25 / hybrid
     vector_weight: float = 0.7
     bm25_weight: float = 0.3
+    bm25_k1: float = 1.5
+    bm25_b: float = 0.75
 
     rerank_enabled: bool = False
     rerank_top_n: int = 20

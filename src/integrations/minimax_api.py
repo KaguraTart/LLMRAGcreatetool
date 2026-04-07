@@ -92,6 +92,7 @@ class MiniMaxClient:
         prompt: str = "Please describe this image in detail",
         detail: str = "high",
     ) -> str:
+        # `detail` is retained for backward compatibility with the deprecated API.
         _ = detail
         return self._provider.understand_image(image_bytes=image_bytes, prompt=prompt)
 

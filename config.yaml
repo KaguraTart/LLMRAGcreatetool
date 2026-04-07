@@ -171,6 +171,8 @@ qa:
   retrieval_mode: "vector"       # vector / bm25 / hybrid
   vector_weight: 0.7
   bm25_weight: 0.3
+  bm25_k1: 1.5
+  bm25_b: 0.75
 
   rerank_enabled: false
   rerank_top_n: 20
