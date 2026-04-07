@@ -86,6 +86,38 @@ python -m src process ./docs/ --output ./output/
 python -m src query --question "你的问题"
 ```
 
+### MCP Server（Phase 3）
+
+通过 stdio 启动 MCP Server：
+
+```bash
+python -m mcp_server
+```
+
+输出集成配置片段：
+
+```bash
+python -m mcp_server --print-config claude-desktop
+python -m mcp_server --print-config cursor
+python -m mcp_server --print-config continue-dev
+```
+
+设置 daemon 地址：
+
+```bash
+export LLMRAG_DAEMON_URL=http://127.0.0.1:7474
+```
+
+Phase 3 任务状态：
+
+| 任务 | Owner | 状态 |
+|------|-------|------|
+| MCP server implementation | Python | DONE |
+| Claude Desktop integration test | QA | DONE |
+| Cursor integration test | QA | DONE |
+| Continue.dev integration test | QA | DONE |
+| MCP SDK tool definitions | Python | DONE |
+
 ## 工具对比
 
 | 环节 | 本项目方案 | 备选方案 |

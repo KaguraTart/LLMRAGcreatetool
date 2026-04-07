@@ -80,6 +80,39 @@ python -m src process ./docs/ --output ./output/
 # Query
 python -m src query --question "Your question"
 ```
+
+### MCP Server (Phase 3)
+
+Run MCP server (stdio):
+
+```bash
+python -m mcp_server
+```
+
+Print integration snippets:
+
+```bash
+python -m mcp_server --print-config claude-desktop
+python -m mcp_server --print-config cursor
+python -m mcp_server --print-config continue-dev
+```
+
+Set daemon target:
+
+```bash
+export LLMRAG_DAEMON_URL=http://127.0.0.1:7474
+```
+
+Phase 3 checklist status:
+
+| Task | Owner | Status |
+|------|-------|--------|
+| MCP server implementation | Python | DONE |
+| Claude Desktop integration test | QA | DONE |
+| Cursor integration test | QA | DONE |
+| Continue.dev integration test | QA | DONE |
+| MCP SDK tool definitions | Python | DONE |
+
 ## Tool Comparison
 
 | Task | Our Approach | Alternative |
