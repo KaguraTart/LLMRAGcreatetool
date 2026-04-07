@@ -1,38 +1,96 @@
 # LLM RAGtools Global Configuration
 
 # ============================================================
-# MiniMax API Configuration (Core LLM Capabilities)
+# MiniMax API Configuration (Legacy Compatibility)
 # ============================================================
 minimax:
-  api_key: "${MINIMAX_API_KEY}"      # Read from environment variable
+  api_key: "${MINIMAX_API_KEY}"
   base_url: "https://api.minimaxi.com"
-  model: "MiniMax-Text-01"            # Text model (entity extraction/classification/quality evaluation)
-  vision_model: "MiniMax-Hailuo-VL-01" # Multimodal model (image understanding/chart description)
-  embedding_model: "embo-01"          # Embedding model
+  model: "MiniMax-Text-01"
+  vision_model: "MiniMax-Hailuo-VL-01"
+  embedding_model: "embo-01"
   max_tokens: 8192
   timeout: 60
+
+# ============================================================
+# Multi-Provider Runtime Configuration
+# ============================================================
+providers:
+  active: "minimax"
+  enabled: ["minimax"]
+  fallback_chain: ["minimax"]
+  load_balancer_pool: []
+
+  minimax:
+    enabled: true
+    api_key: "${MINIMAX_API_KEY}"
+    base_url: "https://api.minimaxi.com"
+    model: "MiniMax-Text-01"
+    vision_model: "MiniMax-Hailuo-VL-01"
+    embedding_model: "embo-01"
+    timeout: 60
+
+  openai:
+    enabled: false
+    api_key: "${OPENAI_API_KEY}"
+    base_url: "https://api.openai.com/v1"
+    model: "gpt-4o"
+    embedding_model: "text-embedding-3-large"
+    timeout: 60
+    api_version: ""
+
+  anthropic:
+    enabled: false
+    api_key: "${ANTHROPIC_API_KEY}"
+    model: "claude-3-5-sonnet-20241022"
+    timeout: 60
+
+  gemini:
+    enabled: false
+    api_key: "${GEMINI_API_KEY}"
+    model: "gemini-1.5-pro"
+    embedding_model: "models/text-embedding-004"
+    timeout: 60
+
+  ollama:
+    enabled: false
+    api_key: ""
+    base_url: "http://localhost:11434"
+    model: "llama3.1"
+    embedding_model: "nomic-embed-text"
+    timeout: 120
+
+  zhipu:
+    enabled: false
+    api_key: "${ZHIPU_API_KEY}"
+    model: "glm-4"
+    embedding_model: "embedding-2"
+    timeout: 60
+
+  qwen:
+    enabled: false
+    api_key: "${QWEN_API_KEY}"
+    model: "qwen-max"
+    embedding_model: "text-embedding-v3"
+    timeout: 60
 
 # ============================================================
 # Vector Database
 # ============================================================
 vector_store:
-  type: "qdrant"                      # qdrant / milvus / chroma
+  type: "qdrant"
   qdrant:
     url: "http://localhost:6333"
     collection: "rag_knowledge_base"
-    vector_size: 1024                 # bge-large-zh-v1.5 dimension
+    vector_size: 1024
     distance: "Cosine"
-  milvus:
-    host: "localhost"
-    port: 19530
-    collection: "rag_knowledge_base"
 
 # ============================================================
 # Knowledge Graph (Optional)
 # ============================================================
 knowledge_graph:
   enabled: false
-  type: "neo4j"                      # neo4j / networkx
+  type: "neo4j"
   neo4j:
     uri: "bolt://localhost:7687"
     username: "neo4j"
@@ -42,8 +100,8 @@ knowledge_graph:
 # Embedding Model
 # ============================================================
 embedding:
-  model_name: "BAAI/bge-large-zh-v1.5"  # Chinese-optimized Embedding model
-  device: "cuda"                          # cuda / cpu
+  model_name: "BAAI/bge-large-zh-v1.5"
+  device: "cuda"
   batch_size: 32
   normalize: true
 
@@ -51,39 +109,39 @@ embedding:
 # PDF Parser Configuration
 # ============================================================
 pdf_parser:
-  extract_images: true                 # Extract images for multimodal understanding
-  extract_tables: true                 # Table extraction
-  ocr_threshold: 0.5                 # Text confidence threshold, trigger OCR below this
-  min_text_length: 50                 # Minimum text block length
-  merge_short_blocks: true             # Merge too-short text blocks
+  extract_images: true
+  extract_tables: true
+  ocr_threshold: 0.5
+  min_text_length: 50
+  merge_short_blocks: true
 
 # ============================================================
 # Chunking Configuration
 # ============================================================
 chunking:
-  strategy: "semantic"               # fixed / recursive / semantic / domain
-  chunk_size: 500                    # token count
-  overlap: 50                        # overlapping token count
-  min_chunk_size: 30                 # minimum chunk length (characters)
-  respect_headings: true              # try to split at headings
+  strategy: "semantic"
+  chunk_size: 500
+  overlap: 50
+  min_chunk_size: 30
+  respect_headings: true
   semantic:
     embedding_model: "BAAI/bge-large-zh-v1.5"
-    threshold: 0.7                  # semantic similarity threshold
+    threshold: 0.7
 
 # ============================================================
 # Entity Extraction Configuration
 # ============================================================
 ner:
   enabled: true
-  use_llm: true                      # True = MiniMax API, False = rules + keywords
-  schema: "technical"                # default / technical / legal / medical
-  confidence_threshold: 0.6           # Confidence filter threshold
+  use_llm: true
+  schema: "technical"
+  confidence_threshold: 0.6
 
 # ============================================================
 # Classification Configuration
 # ============================================================
 classifier:
-  cascade: true                       # Cascade classification (rules → Embedding → LLM)
+  cascade: true
   taxonomy:
     - Technical Documentation
     - Product Specification
@@ -91,25 +149,51 @@ classifier:
     - Research Report
     - Operation Manual
     - FAQ
-  rule_confidence_threshold: 0.9    # Rule classification confidence threshold
-  embedding_confidence_threshold: 0.7 # Embedding classification confidence threshold
+  rule_confidence_threshold: 0.9
+  embedding_confidence_threshold: 0.7
 
 # ============================================================
-# Quality Scoring Configuration
+# Quality Scoring Configuration (Chunk quality)
 # ============================================================
 quality:
   enabled: true
-  use_llm: true                      # LLM self-evaluation
-  min_quality_score: 0.3             # Filter out chunks below this score
+  use_llm: true
+  min_quality_score: 0.3
+
+# ============================================================
+# QA Runtime Configuration (Query -> Retrieve -> Answer)
+# ============================================================
+qa:
+  rewrite: true
+  decompose: true
+  hyde: true
+
+  retrieval_mode: "vector"       # vector / bm25 / hybrid
+  vector_weight: 0.7
+  bm25_weight: 0.3
+  bm25_k1: 1.5
+  bm25_b: 0.75
+
+  rerank_enabled: false
+  rerank_top_n: 20
+
+  cot_enabled: true
+  self_verify: true
+  min_faithfulness: 0.6
+
+  answer_quality_enabled: true
+  answer_quality_use_llm: true
+  min_answer_quality_score: 0.5
+  block_low_quality_response: false
 
 # ============================================================
 # Deduplication Configuration
 # ============================================================
 dedup:
   enabled: true
-  method: "hybrid"                   # minhash / embedding / hybrid
-  minhash_threshold: 0.8            # MinHash literal similarity threshold
-  embedding_threshold: 0.92          # Embedding semantic similarity threshold
+  method: "hybrid"
+  minhash_threshold: 0.8
+  embedding_threshold: 0.92
 
 # ============================================================
 # Knowledge Base Paths
