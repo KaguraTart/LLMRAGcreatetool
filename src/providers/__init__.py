@@ -71,18 +71,31 @@ def build_registry_from_config(config) -> ProviderRegistry:
     }
 
     active = getattr(pc, "active", "minimax")
+    enabled = set(getattr(pc, "enabled", []) or [])
 
     for provider_name, builder in _PROVIDER_MAP.items():
         cfg = getattr(pc, provider_name, None)
-        if cfg is not None:
-            try:
-                provider = builder(cfg)
-                is_active = (provider_name == active)
-                registry.register(provider_name, provider, make_active=is_active)
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).warning(
-                    f"[providers] Failed to init {provider_name}: {e}")
+        if cfg is None:
+            continue
+
+        cfg_enabled = getattr(cfg, "enabled", True)
+        if enabled and provider_name not in enabled:
+            continue
+        if not cfg_enabled:
+            continue
+
+        try:
+            provider = builder(cfg)
+            is_active = (provider_name == active)
+            registry.register(provider_name, provider, make_active=is_active)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                f"[providers] Failed to init {provider_name}: {e}")
+
+    # Ensure active provider exists
+    if registry.list() and registry.active_name not in registry.list():
+        registry.switch(registry.list()[0])
 
     return registry
 
