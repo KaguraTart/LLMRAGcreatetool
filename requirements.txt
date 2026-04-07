@@ -45,3 +45,4 @@ chromadb>=0.5.0
 
 # CLI
 click>=8.1.0
+mcp>=1.27.0
