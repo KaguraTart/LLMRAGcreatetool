@@ -7,9 +7,8 @@
 本文档由技术调研文章 [《RAG 知识库知识处理工作流》](https://github.com/KaguraTart/blog) 驱动实现，重点探索：
 
 1. **LLM 在知识处理各环节的适用性**：理解 vs 提取的边界
-2. **Claude Code CLI / Gemini CLI 的能力边界**：作为 Agent 的使用方式
-3. **MiniMax 多模态 API**：图像理解 + 文本生成的融合
-4. **全开源工具栈**：最小化商业依赖
+2. **MiniMax 多模态 API**：图像理解 + 文本生成的融合
+3. **全开源工具栈**：最小化商业依赖
 
 ## 核心特性
 
@@ -19,7 +18,6 @@
 - 🧠 **智能分块**：按语义/章节/层级自适应分块
 - 🔍 **混合检索**：向量 + BM25 + 知识图谱
 - ⚡ **异步并发**：批量处理，吞吐量高
-- 🛠️ **CLI Agent**：Claude Code CLI / Gemini CLI 集成（可选）
 
 ## 架构概览
 
@@ -88,27 +86,6 @@ python -m src process ./docs/ --output ./output/
 python -m src query --question "你的问题"
 ```
 
-## Claude Code CLI 集成说明
-
-**关于 Claude Code CLI：**
-
-Claude Code CLI（`claude-code` npm 包）是 Anthropic 官方发布的终端工具，**不是开源软件**。本项目通过 `subprocess` 调用它来执行复杂的多步推理任务：
-
-- PDF 质量审查（跨段落逻辑一致性检查）
-- 复杂表格语义理解
-- 文档结构推理（当规则失效时）
-
-```bash
-# 安装 Claude Code CLI（需要 ANTHROPIC_API_KEY）
-npm install -g @anthropic-ai/claude-code
-export ANTHROPIC_API_KEY="your-key-here"
-```
-
-Claude Code CLI 作为 Agent 使用时，本质上是通过官方 API 调用 Claude 模型。它适合：
-- ✅ 多步推理的复杂分析任务
-- ✅ 需要浏览文件系统、搜索代码的分析
-- ✅ 作为 fallback 处理规则无法处理的边缘情况
-
 ## 工具对比
 
 | 环节 | 本项目方案 | 备选方案 |
@@ -116,7 +93,7 @@ Claude Code CLI 作为 Agent 使用时，本质上是通过官方 API 调用 Cla
 | PDF 文字 | PyMuPDF | pdfminer, pdfplumber |
 | OCR | EasyOCR + Tesseract | PaddleOCR, TrOCR |
 | 表格 | pdfplumber + LLM 校验 | Camelot, Tabula |
-| 图表理解 | MiniMax 多模态 API | GPT-4V, Claude Vision |
+| 图表理解 | MiniMax 多模态 API | GPT-4V |
 | 实体抽取 | MiniMax API (函数调用) | spaCy, transformers NER |
 | 向量存储 | Qdrant | Milvus, Chroma, FAISS |
 | 图数据库 | Neo4j (可选) | NebulaGraph |

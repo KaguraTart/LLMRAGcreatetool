@@ -21,18 +21,6 @@ class MiniMaxConfig(BaseModel):
     timeout: int = 60
 
 
-class ClaudeCodeConfig(BaseModel):
-    enabled: bool = False
-    model: str = "sonnet-4"
-    timeout: int = 120
-
-
-class GeminiCLIConfig(BaseModel):
-    enabled: bool = False
-    model: str = "gemini-2.0-flash"
-    api_key: str = ""
-
-
 class QdrantConfig(BaseModel):
     url: str = "http://localhost:6333"
     collection: str = "rag_knowledge_base"
@@ -94,8 +82,6 @@ class DedupConfig(BaseModel):
 class Config(BaseModel):
     """Global configuration"""
     minimax: MiniMaxConfig = MiniMaxConfig()
-    claude_code: ClaudeCodeConfig = ClaudeCodeConfig()
-    gemini_cli: GeminiCLIConfig = GeminiCLIConfig()
     vector_store: VectorStoreConfig = VectorStoreConfig()
     embedding: EmbeddingConfig = EmbeddingConfig()
     chunking: ChunkingConfig = ChunkingConfig()
@@ -142,13 +128,9 @@ class Config(BaseModel):
         """Get API Key"""
         if provider == "minimax":
             return os.environ.get("MINIMAX_API_KEY", self.minimax.api_key)
-        elif provider == "gemini":
-            return os.environ.get("GOOGLE_API_KEY", self.gemini_cli.api_key)
         return ""
     
     def set_api_key(self, provider: str, key: str):
         """Set API Key"""
         if provider == "minimax":
             self.minimax.api_key = key
-        elif provider == "gemini":
-            self.gemini_cli.api_key = key

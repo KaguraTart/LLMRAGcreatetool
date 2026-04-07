@@ -13,22 +13,6 @@ minimax:
   timeout: 60
 
 # ============================================================
-# Claude Code CLI (Optional, for complex Agent tasks)
-# ============================================================
-claude_code:
-  enabled: true
-  model: "sonnet-4"                  # claude-sonnet-4 or opus-4
-  timeout: 120
-
-# ============================================================
-# Gemini CLI (Optional, open-source CLI tool)
-# ============================================================
-gemini_cli:
-  enabled: false
-  model: "gemini-2.0-flash"
-  api_key: "${GOOGLE_API_KEY}"       # Read from environment variable
-
-# ============================================================
 # Vector Database
 # ============================================================
 vector_store:

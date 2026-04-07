@@ -12,7 +12,7 @@ A production-ready RAG knowledge base processing toolkit. Covers the full pipeli
 - 🧠 **Smart chunking**: Fixed / recursive / semantic / heading-aware strategies
 - 🔍 **Hybrid retrieval**: Vector + BM25 + Knowledge Graph
 - ⚡ **Async concurrency**: Batch processing for high throughput
-- 🛠️ **CLI agent**: Claude Code CLI integration for complex tasks (optional)
+
 
 ## Architecture
 
@@ -80,21 +80,6 @@ python -m src process ./docs/ --output ./output/
 # Query
 python -m src query --question "Your question"
 ```
-
-## Claude Code CLI Integration
-
-Claude Code CLI (`claude-code` npm package) is **Anthropic's official commercial tool, not open-source**. This project integrates it via `subprocess` for complex multi-step reasoning tasks:
-
-- PDF quality review (cross-paragraph logical consistency checks)
-- Complex table semantic understanding
-- Document structure inference (when rules fail)
-
-```bash
-# Install Claude Code CLI (requires ANTHROPIC_API_KEY)
-npm install -g @anthropic-ai/claude-code
-export ANTHROPIC_API_KEY="your-key-here"
-```
-
 ## Tool Comparison
 
 | Task | Our Approach | Alternative |
@@ -102,7 +87,7 @@ export ANTHROPIC_API_KEY="your-key-here"
 | PDF text | PyMuPDF | pdfminer, pdfplumber |
 | OCR | EasyOCR + Tesseract | PaddleOCR, TrOCR |
 | Tables | pdfplumber + LLM validation | Camelot, Tabula |
-| Charts | MiniMax multimodal API | GPT-4V, Claude Vision |
+| Charts | MiniMax multimodal API | GPT-4V |
 | Entity extraction | MiniMax API (function calling) | spaCy, transformers NER |
 | Vector store | Qdrant | Milvus, Chroma, FAISS |
 | Graph DB | Neo4j (optional) | NebulaGraph |
