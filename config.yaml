@@ -176,6 +176,8 @@ qa:
 
   rerank_enabled: false
   rerank_top_n: 20
+  colbert_rerank_enabled: false
+  colbert_rerank_top_n: 20
 
   cot_enabled: true
   self_verify: true

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llmrag"
+version = "0.1.0"
+description = "LLMRAG knowledge base processing toolkit"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "KaguraTart" }
+]
+dependencies = [
+  "pydantic>=2.5.0",
+  "requests>=2.31.0",
+  "fastapi>=0.111.0",
+  "click>=8.1.0"
+]
+
+[project.scripts]
+llmrag = "cli.llmrag:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "daemon*", "mcp_server*", "cli*"]
+exclude = ["tests*", "examples*", "vscode-extension*", "jetbrains-plugin*", "npm*"]

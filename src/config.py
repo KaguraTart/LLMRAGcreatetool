@@ -155,6 +155,8 @@ class QAConfig(BaseModel):
 
     rerank_enabled: bool = False
     rerank_top_n: int = 20
+    colbert_rerank_enabled: bool = False
+    colbert_rerank_top_n: int = 20
 
     cot_enabled: bool = True
     self_verify: bool = True

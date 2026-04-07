@@ -1,2 +1,16 @@
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+vscode-extension/node_modules/
+vscode-extension/dist/
+npm/llmrag-client/node_modules/
+npm/llmrag-client/dist/
+jetbrains-plugin/.gradle/
+jetbrains-plugin/build/
