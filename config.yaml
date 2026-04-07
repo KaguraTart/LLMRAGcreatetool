@@ -1,0 +1,143 @@
+# LLM RAGtools 全局配置
+
+# ============================================================
+# MiniMax API 配置（核心 LLM 能力）
+# ============================================================
+minimax:
+  api_key: "${MINIMAX_API_KEY}"      # 从环境变量读取
+  base_url: "https://api.minimaxi.com"
+  model: "MiniMax-Text-01"            # 文本模型（实体抽取/分类/质量评估）
+  vision_model: "MiniMax-Hailuo-VL-01" # 多模态模型（图像理解/图表描述）
+  embedding_model: "embo-01"          # Embedding 模型
+  max_tokens: 8192
+  timeout: 60
+
+# ============================================================
+# Claude Code CLI（可选，用于复杂 Agent 任务）
+# ============================================================
+claude_code:
+  enabled: true
+  model: "sonnet-4"                  # claude-sonnet-4 或 opus-4
+  timeout: 120
+
+# ============================================================
+# Gemini CLI（可选，开源 CLI 工具）
+# ============================================================
+gemini_cli:
+  enabled: false
+  model: "gemini-2.0-flash"
+  api_key: "${GOOGLE_API_KEY}"       # 从环境变量读取
+
+# ============================================================
+# 向量数据库
+# ============================================================
+vector_store:
+  type: "qdrant"                      # qdrant / milvus / chroma
+  qdrant:
+    url: "http://localhost:6333"
+    collection: "rag_knowledge_base"
+    vector_size: 1024                 # bge-large-zh-v1.5 维度
+    distance: "Cosine"
+  milvus:
+    host: "localhost"
+    port: 19530
+    collection: "rag_knowledge_base"
+
+# ============================================================
+# 知识图谱（可选）
+# ============================================================
+knowledge_graph:
+  enabled: false
+  type: "neo4j"                      # neo4j / networkx
+  neo4j:
+    uri: "bolt://localhost:7687"
+    username: "neo4j"
+    password: "${NEO4J_PASSWORD}"
+
+# ============================================================
+# Embedding 模型
+# ============================================================
+embedding:
+  model_name: "BAAI/bge-large-zh-v1.5"  # 中文优化的 Embedding 模型
+  device: "cuda"                          # cuda / cpu
+  batch_size: 32
+  normalize: true
+
+# ============================================================
+# PDF 解析配置
+# ============================================================
+pdf_parser:
+  extract_images: true                 # 提取图片用于多模态理解
+  extract_tables: true                 # 表格提取
+  ocr_threshold: 0.5                 # 文字置信度阈值，低于此值触发 OCR
+  min_text_length: 50                 # 最小文字块长度
+  merge_short_blocks: true             # 合并过短的文字块
+
+# ============================================================
+# 分块配置
+# ============================================================
+chunking:
+  strategy: "semantic"               # fixed / recursive / semantic / domain
+  chunk_size: 500                    # token 数
+  overlap: 50                        # 重叠 token 数
+  min_chunk_size: 30                 # 最小 chunk 长度（字符）
+  respect_headings: true              # 尽量在标题处分割
+  semantic:
+    embedding_model: "BAAI/bge-large-zh-v1.5"
+    threshold: 0.7                  # 语义相似度阈值
+
+# ============================================================
+# 实体抽取配置
+# ============================================================
+ner:
+  enabled: true
+  use_llm: true                      # True = MiniMax API, False = 规则+关键词
+  schema: "technical"                # default / technical / legal / medical
+  confidence_threshold: 0.6           # 置信度过滤阈值
+
+# ============================================================
+# 分类配置
+# ============================================================
+classifier:
+  cascade: true                       # 级联分类（规则 → Embedding → LLM）
+  taxonomy:
+    - 技术文档
+    - 产品规格
+    - 政策法规
+    - 研究报告
+    - 操作手册
+    - 常见问题
+  rule_confidence_threshold: 0.9    # 规则分类置信度阈值
+  embedding_confidence_threshold: 0.7 # Embedding 分类置信度阈值
+
+# ============================================================
+# 质量评分配置
+# ============================================================
+quality:
+  enabled: true
+  use_llm: true                      # LLM 自评
+  min_quality_score: 0.3             # 低于此分数的 chunk 过滤掉
+
+# ============================================================
+# 去重配置
+# ============================================================
+dedup:
+  enabled: true
+  method: "hybrid"                   # minhash / embedding / hybrid
+  minhash_threshold: 0.8            # MinHash 字面相似度阈值
+  embedding_threshold: 0.92          # Embedding 语义相似度阈值
+
+# ============================================================
+# 知识库路径
+# ============================================================
+knowledge_base:
+  input_dir: "./input/"
+  output_dir: "./output/"
+  temp_dir: "./temp/"
+
+# ============================================================
+# 日志
+# ============================================================
+logging:
+  level: "INFO"
+  file: "./logs/ragtools.log"

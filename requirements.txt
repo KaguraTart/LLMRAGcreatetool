@@ -1,0 +1,35 @@
+# 核心依赖
+pymupdf>=1.24.0        # PDF 文字/图片提取
+pdfplumber>=0.11.0      # PDF 表格提取
+python-docx>=1.1.0       # Word 文档解析
+markdown>=3.5             # Markdown 解析
+html2text>=2020.1.16     # HTML 转文本
+
+# OCR（扫描件处理）
+easyocr>=1.7.0           # 多语言 OCR
+pytesseract>=0.3.10      # Tesseract Python 接口
+
+# Embedding & NLP
+sentence-transformers>=2.2.0  # 开源 Embedding 模型
+scikit-learn>=1.4.0       # 分类、去重
+datasketch>=1.6.4        # MinHash 去重
+tiktoken>=0.5.0          # Token 计数
+
+# 向量数据库
+qdrant-client>=1.7.0      # Qdrant 向量库
+
+# 知识图谱（可选）
+# neo4j>=5.15.0
+
+# HTTP / API
+requests>=2.31.0
+aiohttp>=3.9.0           # 异步 HTTP
+
+# 配置
+pyyaml>=6.0
+pydantic>=2.5.0
+
+# 工具
+python-multipart>=0.0.6   # 文件上传
+pillow>=10.0.0            # 图片处理
+numpy>=1.26.0
