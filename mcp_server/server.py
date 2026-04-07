@@ -109,4 +109,3 @@ def answer_workspace(workspace: str, text: str) -> dict[str, Any]:
     """Run full RAG answer generation."""
 
     return _run_safe(lambda: _client.answer(workspace=workspace, text=text))
-

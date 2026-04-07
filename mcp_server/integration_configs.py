@@ -44,4 +44,3 @@ def continue_dev_config(daemon_url: str) -> dict[str, Any]:
             }
         ]
     }
-
