@@ -1,9 +1,12 @@
 import unittest
 
 from mcp_server.integration_configs import (
+    claude_code_config,
     claude_desktop_config,
     continue_dev_config,
     cursor_config,
+    jetbrains_config,
+    openclaw_config,
 )
 
 
@@ -33,6 +36,26 @@ class MCPIntegrationConfigTests(unittest.TestCase):
         self.assertEqual(server["command"], "python")
         self.assertEqual(server["args"], ["-m", "mcp_server"])
         self.assertEqual(server["env"]["LLMRAG_DAEMON_URL"], self.daemon_url)
+
+    def test_openclaw_config(self):
+        config = openclaw_config(self.daemon_url)
+        server = config["plugins"]["llmrag"]
+        self.assertEqual(server["transport"], "stdio")
+        self.assertEqual(server["command"], "python")
+        self.assertEqual(server["args"], ["-m", "mcp_server"])
+        self.assertEqual(server["env"]["LLMRAG_DAEMON_URL"], self.daemon_url)
+
+    def test_claude_code_config(self):
+        config = claude_code_config(self.daemon_url)
+        server = config["mcp"]["servers"]["llmrag"]
+        self.assertEqual(server["command"], "python")
+        self.assertEqual(server["args"], ["-m", "mcp_server"])
+        self.assertEqual(server["env"]["LLMRAG_DAEMON_URL"], self.daemon_url)
+
+    def test_jetbrains_config(self):
+        config = jetbrains_config(self.daemon_url)
+        self.assertEqual(config["llmrag"]["daemonUrl"], self.daemon_url)
+        self.assertEqual(config["llmrag"]["mcpServer"]["command"], "python")
 
 
 if __name__ == "__main__":

@@ -21,22 +21,28 @@ class Retriever:
         vector_store,
         embedding_model,
         provider=None,
+        extension_registry=None,
         retrieval_mode: str = "vector",
         vector_weight: float = 0.7,
         bm25_weight: float = 0.3,
         rerank_enabled: bool = False,
         rerank_top_n: int = 20,
+        colbert_rerank_enabled: bool = False,
+        colbert_rerank_top_n: int = 20,
         bm25_k1: float = 1.5,
         bm25_b: float = 0.75,
     ):
         self.vector_store = vector_store
         self.embedding_model = embedding_model
         self.provider = provider
+        self.extension_registry = extension_registry
         self.retrieval_mode = retrieval_mode
         self.vector_weight = vector_weight
         self.bm25_weight = bm25_weight
         self.rerank_enabled = rerank_enabled
         self.rerank_top_n = rerank_top_n
+        self.colbert_rerank_enabled = colbert_rerank_enabled
+        self.colbert_rerank_top_n = colbert_rerank_top_n
         self.bm25_k1 = bm25_k1
         self.bm25_b = bm25_b
 
@@ -108,6 +114,8 @@ class Retriever:
 
         if do_rerank and merged:
             merged = self._rerank(query, merged)
+        if self.colbert_rerank_enabled and merged:
+            merged = self._colbert_rerank(query, merged)
 
         return merged[:k]
 
@@ -307,3 +315,19 @@ class Retriever:
                 raise ValueError("Empty embedding")
             arr = arr[0]
         return arr
+
+    def _colbert_rerank(self, query: str, candidates: list[dict]) -> list[dict]:
+        if not self.extension_registry:
+            return candidates
+        rerankers = self.extension_registry.by_capability("reranker")
+        if not rerankers:
+            return candidates
+        reranker = rerankers[0]
+        rerank_fn = getattr(reranker, "rerank", None)
+        if not callable(rerank_fn):
+            return candidates
+        try:
+            return rerank_fn(query=query, candidates=candidates, top_n=self.colbert_rerank_top_n)
+        except Exception as e:
+            logger.warning(f"ColBERT rerank failed: {e}")
+            return candidates

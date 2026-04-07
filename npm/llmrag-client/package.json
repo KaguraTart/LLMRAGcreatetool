@@ -1,0 +1,27 @@
+{
+  "name": "@llmrag/client",
+  "version": "0.1.0",
+  "description": "JavaScript client for llmrag daemon",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "rag",
+    "llm",
+    "client"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

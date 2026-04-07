@@ -100,6 +100,9 @@ python -m mcp_server
 python -m mcp_server --print-config claude-desktop
 python -m mcp_server --print-config cursor
 python -m mcp_server --print-config continue-dev
+python -m mcp_server --print-config openclaw
+python -m mcp_server --print-config claude-code
+python -m mcp_server --print-config jetbrains
 ```
 
 设置 daemon 地址：
@@ -117,6 +120,33 @@ Phase 3 任务状态：
 | Cursor integration test | QA | DONE |
 | Continue.dev integration test | QA | DONE |
 | MCP SDK tool definitions | Python | DONE |
+
+Phase 4 任务状态：
+
+| 任务 | Owner | 状态 |
+|------|-------|------|
+| OpenClaw plugin adapter | Python | DONE |
+| Claude Code subprocess adapter | Python | DONE |
+| JetBrains plugin (Kotlin) baseline | Kotlin | DONE |
+
+Phase 5 任务状态：
+
+| 任务 | Owner | 状态 |
+|------|-------|------|
+| Extension registry + discovery | Core | DONE |
+| Built-in extensions (BM25, ColBERT reranker) | Core | DONE |
+| Custom chunker API docs | Docs | DONE |
+| VS Code Marketplace publishing | DevOps | DONE |
+| npm package publishing | DevOps | DONE |
+| pip package publishing | DevOps | DONE |
+
+相关文档：
+
+- `docs/adapters.md`
+- `docs/extension-author-guide.md`
+- `docs/custom-chunker-api.md`
+- `docs/publishing.md`
+- `docs/jetbrains-plugin.md`
 
 ## 工具对比
 

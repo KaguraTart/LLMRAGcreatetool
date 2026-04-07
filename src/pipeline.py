@@ -19,6 +19,9 @@ from .integrations.minimax_api import MiniMaxClient
 from .integrations.embedding_model import EmbeddingModel
 from .indexers.vector_store import QdrantStore, ChromaStore
 from .indexers.retriever import Retriever
+from .extensions import ExtensionRegistry
+from .extensions.builtin.bm25 import BM25Extension
+from .extensions.builtin.colbert_reranker import ColBERTRerankerExtension
 from .providers import build_registry_from_config
 from .query.query_processor import QueryProcessor
 from .qa import AnswerGenerator, Synthesizer
@@ -140,6 +143,9 @@ class RAGPipeline:
 
     def _init_indexers(self):
         vs_config = self.config.vector_store
+        self.extension_registry = ExtensionRegistry(core_version="0.1.0")
+        self.extension_registry.register(BM25Extension.manifest, BM25Extension())
+        self.extension_registry.register(ColBERTRerankerExtension.manifest, ColBERTRerankerExtension())
 
         if vs_config.type == "qdrant":
             self.vector_store = QdrantStore(
@@ -160,11 +166,14 @@ class RAGPipeline:
             vector_store=self.vector_store,
             embedding_model=self.embedding_model,
             provider=self.provider or self.minimax,
+            extension_registry=self.extension_registry,
             retrieval_mode=self.config.qa.retrieval_mode,
             vector_weight=self.config.qa.vector_weight,
             bm25_weight=self.config.qa.bm25_weight,
             rerank_enabled=self.config.qa.rerank_enabled,
             rerank_top_n=self.config.qa.rerank_top_n,
+            colbert_rerank_enabled=self.config.qa.colbert_rerank_enabled,
+            colbert_rerank_top_n=self.config.qa.colbert_rerank_top_n,
             bm25_k1=self.config.qa.bm25_k1,
             bm25_b=self.config.qa.bm25_b,
         )

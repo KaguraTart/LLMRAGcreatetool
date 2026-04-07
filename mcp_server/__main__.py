@@ -5,7 +5,14 @@ from __future__ import annotations
 import argparse
 import json
 
-from .integration_configs import claude_desktop_config, continue_dev_config, cursor_config
+from .integration_configs import (
+    claude_code_config,
+    claude_desktop_config,
+    continue_dev_config,
+    cursor_config,
+    jetbrains_config,
+    openclaw_config,
+)
 from .server import mcp
 
 
@@ -13,7 +20,7 @@ def main():
     parser = argparse.ArgumentParser(description="LLMRAG MCP server")
     parser.add_argument(
         "--print-config",
-        choices=["claude-desktop", "cursor", "continue-dev"],
+        choices=["claude-desktop", "cursor", "continue-dev", "openclaw", "claude-code", "jetbrains"],
         help="Print integration config snippet and exit",
     )
     parser.add_argument(
@@ -30,6 +37,12 @@ def main():
             print(json.dumps(cursor_config(args.daemon_url), indent=2, ensure_ascii=False))
         elif args.print_config == "continue-dev":
             print(json.dumps(continue_dev_config(args.daemon_url), indent=2, ensure_ascii=False))
+        elif args.print_config == "openclaw":
+            print(json.dumps(openclaw_config(args.daemon_url), indent=2, ensure_ascii=False))
+        elif args.print_config == "claude-code":
+            print(json.dumps(claude_code_config(args.daemon_url), indent=2, ensure_ascii=False))
+        elif args.print_config == "jetbrains":
+            print(json.dumps(jetbrains_config(args.daemon_url), indent=2, ensure_ascii=False))
         return
 
     mcp.run(transport="stdio")

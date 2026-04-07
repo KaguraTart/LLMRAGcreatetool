@@ -95,6 +95,9 @@ Print integration snippets:
 python -m mcp_server --print-config claude-desktop
 python -m mcp_server --print-config cursor
 python -m mcp_server --print-config continue-dev
+python -m mcp_server --print-config openclaw
+python -m mcp_server --print-config claude-code
+python -m mcp_server --print-config jetbrains
 ```
 
 Set daemon target:
@@ -112,6 +115,33 @@ Phase 3 checklist status:
 | Cursor integration test | QA | DONE |
 | Continue.dev integration test | QA | DONE |
 | MCP SDK tool definitions | Python | DONE |
+
+Phase 4 checklist status:
+
+| Task | Owner | Status |
+|------|-------|--------|
+| OpenClaw plugin adapter | Python | DONE |
+| Claude Code subprocess adapter | Python | DONE |
+| JetBrains plugin (Kotlin) baseline | Kotlin | DONE |
+
+Phase 5 checklist status:
+
+| Task | Owner | Status |
+|------|-------|--------|
+| Extension registry + discovery | Core | DONE |
+| Built-in extensions (BM25, ColBERT reranker) | Core | DONE |
+| Custom chunker API docs | Docs | DONE |
+| VS Code Marketplace publishing | DevOps | DONE |
+| npm package publishing | DevOps | DONE |
+| pip package publishing | DevOps | DONE |
+
+See docs:
+
+- `docs/adapters.md`
+- `docs/extension-author-guide.md`
+- `docs/custom-chunker-api.md`
+- `docs/publishing.md`
+- `docs/jetbrains-plugin.md`
 
 ## Tool Comparison
 

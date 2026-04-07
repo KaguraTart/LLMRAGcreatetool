@@ -1,0 +1,12 @@
+<idea-plugin>
+    <id>com.llmrag.jetbrains</id>
+    <name>LLM RAG</name>
+    <vendor>KaguraTart</vendor>
+    <description>LLM RAG daemon client and query tool window.</description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow id="LLM RAG" factoryClass="com.llmrag.plugin.LLMRAGToolWindowFactory" anchor="right"/>
+    </extensions>
+</idea-plugin>
