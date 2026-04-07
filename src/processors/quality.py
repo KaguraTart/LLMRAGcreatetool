@@ -1,6 +1,6 @@
 """
-质量评分器
-LLM 自评文本质量（完整性 / 清晰度 / 独立性 / 价值）
+Quality Scorer
+LLM self-assessment of text quality (completeness / clarity / independence / value)
 """
 
 import logging
@@ -12,19 +12,19 @@ logger = logging.getLogger(__name__)
 @dataclass
 class QualityScore:
     score: float           # 0.0 - 10.0
-    completeness: float    # 信息完整性
-    clarity: float        # 清晰度
-    independence: float   # 独立可读性
-    value: float          # 信息价值
-    method: str           # llm / rule
+    completeness: float    # information completeness
+    clarity: float         # clarity
+    independence: float    # independent readability
+    value: float           # information value
+    method: str            # llm / rule
 
 
 class QualityScorer:
     """
-    文本质量评分器
+    Text quality scorer
     
-    默认：LLM 自评
-    Fallback: 规则评分（无 LLM 时使用）
+    Default: LLM self-assessment
+    Fallback: Rule-based scoring (when LLM is unavailable)
     """
     
     def __init__(self, llm_client=None):
@@ -32,10 +32,10 @@ class QualityScorer:
     
     def score(self, text: str, method: str = "auto") -> QualityScore:
         """
-        评估文本质量
+        Evaluate text quality
         
         Args:
-            text: 待评估文本
+            text: Text to evaluate
             method: auto / llm / rule
             
         Returns:
@@ -48,12 +48,12 @@ class QualityScorer:
     
     def _score_rule(self, text: str) -> QualityScore:
         """
-        规则评分（无 LLM 时的降级方案）
+        Rule-based scoring (fallback when LLM is unavailable)
         
-        评分维度：
-        - 长度：过短=低质量，过长需拆分
-        - 标点密度：衡量句子完整性
-        - 独特字符比例：衡量信息丰富度
+        Scoring dimensions:
+        - Length: too short = low quality, too long needs splitting
+        - Punctuation density: measures sentence completeness
+        - Unique character ratio: measures information richness
         """
         if not text:
             return QualityScore(
@@ -61,18 +61,18 @@ class QualityScorer:
                 independence=0, value=0, method="rule"
             )
         
-        # 长度评分
+        # Length scoring
         length = len(text)
-        length_score = min(length / 500, 1.0) * 8  # 0-8 分
+        length_score = min(length / 500, 1.0) * 8  # 0-8 points
         
-        # 标点密度（句号/逗号/分号密度）
+        # Punctuation density (period/comma/semicolon density)
         punct_count = sum(1 for c in text if c in '。,，;；')
         punct_ratio = punct_count / length if length > 0 else 0
-        punct_score = min(punct_ratio * 200, 2)  # 0-2 分
+        punct_score = min(punct_ratio * 200, 2)  # 0-2 points
         
-        # 独特字符比例（重复少=信息丰富）
+        # Unique character ratio (less repetition = richer information)
         unique_ratio = len(set(text)) / length if length > 0 else 0
-        diversity_score = unique_ratio * 5  # 0-5 分
+        diversity_score = unique_ratio * 5  # 0-5 points
         
         total = length_score + punct_score + diversity_score
         
@@ -87,40 +87,40 @@ class QualityScorer:
     
     def _score_llm(self, text: str) -> QualityScore:
         """
-        LLM 自评（需要 llm_client）
+        LLM self-assessment (requires llm_client)
         
-        提示工程引导 LLM 从四个维度打分：
-        - 信息完整性（是否有头无尾）
-        - 清晰度（是否有歧义）
-        - 独立可读性（脱离上下文是否可理解）
-        - 信息价值（是否有实质内容）
+        Prompt engineering guides LLM to score across four dimensions:
+        - Completeness (no missing endings or taking things out of context)
+        - Clarity (no ambiguity or fragmentation)
+        - Independence (understandable without surrounding context)
+        - Value (substantial content vs. empty/repetitive)
         """
         if not self.llm:
             return self._score_rule(text)
         
-        truncated = text[:3000]  # 限制长度
+        truncated = text[:3000]  # Length limit
         
         prompt = f"""
-请评估以下文本片段的质量，从四个维度打分（每个维度 0-10 分）：
+Please evaluate the quality of the following text snippet, scoring it across four dimensions (0-10 for each):
 
-评估文本：
+Text to evaluate:
 ---
 {truncated}
 ---
 
-评分维度：
-1. completeness（完整性）：信息是否完整，有头无尾/断章取义=低分
-2. clarity（清晰度）：语义是否清晰连贯，有歧义/碎片=低分
-3. independence（独立可读性）：脱离上下文是否可理解，过于依赖前后文=低分
-4. value（信息价值）：是否包含实质性内容，空洞/重复=低分
+Scoring dimensions:
+1. completeness: Is the information complete? Incomplete endings or taking things out of context = low score
+2. clarity: Is the meaning clear and coherent? Ambiguity or fragmentation = low score
+3. independence: Is it understandable without surrounding context? Over-reliance on context = low score
+4. value: Does it contain substantial content? Empty or repetitive = low score
 
-输出严格按以下 JSON 格式（不要有其他内容）：
+Output strictly in the following JSON format (no other content):
 {{
-  "completeness": 0-10的浮点数,
-  "clarity": 0-10的浮点数,
-  "independence": 0-10的浮点数,
-  "value": 0-10的浮点数,
-  "reasoning": "一句话评分理由"
+  "completeness": float between 0-10,
+  "clarity": float between 0-10,
+  "independence": float between 0-10,
+  "value": float between 0-10,
+  "reasoning": "one-sentence scoring rationale"
 }}
 """
         
@@ -128,7 +128,7 @@ class QualityScorer:
             response = self.llm.generate(prompt)
             
             import json, re
-            # 提取 JSON
+            # Extract JSON
             match = re.search(r'\{[\s\S]*\}', response)
             if match:
                 data = json.loads(match.group())
@@ -149,7 +149,7 @@ class QualityScorer:
                     method="llm"
                 )
         except Exception as e:
-            logger.warning(f"LLM 评分失败: {e}")
+            logger.warning(f"LLM scoring failed: {e}")
         
         return self._score_rule(text)
     
@@ -160,15 +160,15 @@ class QualityScorer:
         method: str = "auto"
     ) -> list[tuple[QualityScore, str]]:
         """
-        批量评分并过滤
+        Batch scoring and filtering
         
         Returns:
-            [(QualityScore, text), ...] 仅返回分数 >= min_score 的项
+            [(QualityScore, text), ...] Only returns items with score >= min_score
         """
         scored = []
         for text in texts:
             score = self.score(text, method=method)
-            if score.score >= min_score * 10:  # 归一化
+            if score.score >= min_score * 10:  # Normalize
                 scored.append((score, text))
         
         return scored

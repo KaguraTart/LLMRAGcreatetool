@@ -1,6 +1,6 @@
 """
-MiniMax API 封装
-支持：文本生成 / 函数调用（实体抽取）/ 图像理解
+MiniMax API Wrapper
+Supports: text generation / function calling (entity extraction) / image understanding
 """
 
 import os
@@ -15,12 +15,12 @@ logger = logging.getLogger(__name__)
 
 class MiniMaxClient:
     """
-    MiniMax API 客户端
+    MiniMax API Client
     
-    功能：
-    1. 文本生成（Entity / Relation 抽取、分类、质量评分）
-    2. 图像理解（图表描述、多模态理解）
-    3. 函数调用（Tool Use）
+    Features:
+    1. Text generation (Entity / Relation extraction, classification, quality scoring)
+    2. Image understanding (chart description, multimodal understanding)
+    3. Function calling (Tool Use)
     """
     
     def __init__(
@@ -40,7 +40,7 @@ class MiniMaxClient:
         self.timeout = timeout
         
         if not self.api_key:
-            logger.warning("MINIMAX_API_KEY 未设置，部分功能不可用")
+            logger.warning("MINIMAX_API_KEY is not set, some features will be unavailable")
     
     def generate(
         self,
@@ -51,20 +51,20 @@ class MiniMaxClient:
         json_mode: bool = False,
     ) -> str:
         """
-        文本生成
+        Text generation
         
         Args:
-            prompt: 用户提示
-            system: 系统提示
-            temperature: 采样温度
-            max_tokens: 最大生成长度
-            json_mode: 是否返回 JSON
+            prompt: User prompt
+            system: System prompt
+            temperature: Sampling temperature
+            max_tokens: Maximum generation length
+            json_mode: Whether to return JSON
             
         Returns:
-            生成的文本
+            Generated text
         """
         if not self.api_key:
-            raise RuntimeError("MINIMAX_API_KEY 未设置")
+            raise RuntimeError("MINIMAX_API_KEY is not set")
         
         import requests
         
@@ -101,7 +101,7 @@ class MiniMaxClient:
             return data["choices"][0]["message"]["content"]
         
         except requests.exceptions.RequestException as e:
-            logger.error(f"MiniMax API 调用失败: {e}")
+            logger.error(f"MiniMax API call failed: {e}")
             raise
     
     def generate_with_functions(
@@ -112,20 +112,20 @@ class MiniMaxClient:
         temperature: float = 0.3,
     ) -> dict:
         """
-        函数调用（Tool Use）
+        Function calling (Tool Use)
         
-        用于：结构化实体抽取、关系抽取
+        Used for: structured entity extraction, relation extraction
         
         Args:
-            prompt: 用户提示
-            functions: 函数定义列表（OpenAI format）
-            system: 系统提示
+            prompt: User prompt
+            functions: List of function definitions (OpenAI format)
+            system: System prompt
             
         Returns:
-            函数调用结果（parsed）
+            Function call result (parsed)
         """
         if not self.api_key:
-            raise RuntimeError("MINIMAX_API_KEY 未设置")
+            raise RuntimeError("MINIMAX_API_KEY is not set")
         
         import requests
         
@@ -168,34 +168,34 @@ class MiniMaxClient:
                 return {"content": msg.get("content", "")}
         
         except Exception as e:
-            logger.error(f"MiniMax 函数调用失败: {e}")
+            logger.error(f"MiniMax function call failed: {e}")
             raise
     
     def understand_image(
         self,
         image_bytes: bytes,
-        prompt: str = "请详细描述这张图片的内容",
+        prompt: str = "Please describe this image in detail",
         detail: str = "high",
     ) -> str:
         """
-        图像理解（多模态）
+        Image understanding (multimodal)
         
-        用于：图表描述、扫描件内容提取、复杂页面理解
+        Used for: chart description, scanned document content extraction, complex page understanding
         
         Args:
-            image_bytes: 图片字节数据
-            prompt: 询问提示
-            detail: low / high（高分辨率=更多细节）
+            image_bytes: Image byte data
+            prompt: Query prompt
+            detail: low / high (high resolution = more details)
             
         Returns:
-            图片描述文本
+            Image description text
         """
         if not self.api_key:
-            raise RuntimeError("MINIMAX_API_KEY 未设置")
+            raise RuntimeError("MINIMAX_API_KEY is not set")
         
         import requests
         
-        # Base64 编码
+        # Base64 encoding
         b64_image = base64.b64encode(image_bytes).decode()
         
         messages = [
@@ -238,7 +238,7 @@ class MiniMaxClient:
             return data["choices"][0]["message"]["content"]
         
         except Exception as e:
-            logger.error(f"MiniMax 图像理解失败: {e}")
+            logger.error(f"MiniMax image understanding failed: {e}")
             raise
     
     def extract_entities(
@@ -247,11 +247,11 @@ class MiniMaxClient:
         schema: dict,
     ) -> dict:
         """
-        实体+关系抽取（通过函数调用）
+        Entity + relation extraction (via function calling)
         
         Args:
-            text: 待抽取文本
-            schema: 抽取 Schema
+            text: Text to extract from
+            schema: Extraction schema
             
         Returns:
             {"entities": [...], "relations": [...]}
@@ -259,19 +259,19 @@ class MiniMaxClient:
         entity_type = schema.get("entities", [])
         relation_type = schema.get("relations", [])
         
-        entity_def = "\n".join([f"- {e}: 实体类型" for e in entity_type])
-        relation_def = "\n".join([f"- {r}: 关系类型" for r in relation_type])
+        entity_def = "\n".join([f"- {e}: Entity type" for e in entity_type])
+        relation_def = "\n".join([f"- {r}: Relation type" for r in relation_type])
         
         functions = [
             {
                 "name": "extract_knowledge",
-                "description": "从文本中抽取实体和关系",
+                "description": "Extract entities and relations from text",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "entities": {
                             "type": "array",
-                            "description": "抽取的实体列表",
+                            "description": "List of extracted entities",
                             "items": {
                                 "type": "object",
                                 "properties": {
@@ -283,7 +283,7 @@ class MiniMaxClient:
                         },
                         "relations": {
                             "type": "array",
-                            "description": "抽取的关系列表",
+                            "description": "List of extracted relations",
                             "items": {
                                 "type": "object",
                                 "properties": {
@@ -299,22 +299,22 @@ class MiniMaxClient:
             }
         ]
         
-        prompt = f"""请从以下文本中抽取实体和关系。
+        prompt = f"""Please extract entities and relations from the following text.
 
-实体类型：
+Entity types:
 {entity_def}
 
-关系类型：
+Relation types:
 {relation_def}
 
-文本：
+Text:
 ---
 {text[:4000]}
 ---
 
-请调用 extract_knowledge 函数输出结果。"""
+Please call the extract_knowledge function to output the results."""
         
-        system = "你是一个专业的知识抽取系统，只输出 JSON，不输出其他内容。"
+        system = "You are a professional knowledge extraction system. Only output JSON, no other content."
         
         result = self.generate_with_functions(prompt, functions, system=system)
         
@@ -329,24 +329,24 @@ class MiniMaxClient:
         categories: list[str],
     ) -> dict:
         """
-        文本分类（LLM）
+        Text classification (LLM)
         
         Returns:
-            {"category": "分类结果", "confidence": 0.0-1.0}
+            {"category": "classification result", "confidence": 0.0-1.0}
         """
-        prompt = f"""请将以下文本分类到最合适的类别。
+        prompt = f"""Please classify the following text into the most appropriate category.
 
-可选类别：{', '.join(categories)}
+Available categories: {', '.join(categories)}
 
-文本：
+Text:
 ---
 {text[:2000]}
 ---
 
-输出 JSON：
-{{"category": "类别名", "confidence": 0.0-1.0}}"""
+Output JSON:
+{{"category": "category name", "confidence": 0.0-1.0}}"""
         
-        system = "你是文本分类专家，只输出 JSON。"
+        system = "You are a text classification expert. Only output JSON."
         
         response = self.generate(prompt, system=system, temperature=0.3)
         

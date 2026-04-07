@@ -1,6 +1,6 @@
 """
-Markdown 解析器
-支持：纯 Markdown 文件的语义分块
+Markdown Parser
+Supports: Semantic chunking of plain Markdown files
 """
 
 import re
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MarkdownExtractionResult:
-    """Markdown 解析结果"""
+    """Markdown parsing result"""
     file_path: str
     title: str = ""
     sections: list[dict] = field(default_factory=list)  # [{title, level, content}]
@@ -24,23 +24,23 @@ class MarkdownExtractionResult:
 
 class MarkdownExtractor:
     """
-    Markdown 解析器
+    Markdown Parser
     
-    策略：
-    1. 识别标题层级（# ## ###）
-    2. 按标题切分章节
-    3. 识别代码块、表格、列表等特殊元素
+    Strategy:
+    1. Identify heading hierarchy (# ## ###)
+    2. Split sections by headings
+    3. Identify special elements like code blocks, tables, lists, etc.
     """
     
-    # 标题正则
+    # Heading regex
     HEADING_PATTERN = re.compile(r'^(#{1,6})\s+(.+)$', re.MULTILINE)
-    # 代码块正则
+    # Code block regex
     CODE_BLOCK_PATTERN = re.compile(r'```[\s\S]*?```|`[^`]+`', re.MULTILINE)
-    # 表格正则
+    # Table regex
     TABLE_PATTERN = re.compile(r'\|.+\|\n\|[-| :]+\|\n((?:\|.+\|\n)*)', re.MULTILINE)
     
     def extract(self, file_path: str) -> MarkdownExtractionResult:
-        """提取 Markdown 文件"""
+        """Extract Markdown file"""
         file_path = Path(file_path)
         result = MarkdownExtractionResult(file_path=str(file_path))
         
@@ -48,18 +48,18 @@ class MarkdownExtractor:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
         except Exception as e:
-            logger.error(f"读取 Markdown 失败: {e}")
+            logger.error(f"Failed to read Markdown: {e}")
             return result
         
         result.full_text = content
         
-        # 提取标题
+        # Extract headings
         headings = list(self.HEADING_PATTERN.finditer(content))
         if headings:
             first_heading = headings[0].group(2).strip()
             result.title = first_heading
         
-        # 按标题切分章节
+        # Split sections by headings
         sections = []
         
         for i, match in enumerate(headings):
@@ -67,7 +67,7 @@ class MarkdownExtractor:
             title = match.group(2).strip()
             start = match.end()
             
-            # 找到下一个标题的位置
+            # Find position of next heading
             end = headings[i + 1].start() if i + 1 < len(headings) else len(content)
             
             section_text = content[start:end].strip()
@@ -82,15 +82,15 @@ class MarkdownExtractor:
         
         result.sections = sections
         
-        # 构建层级树
+        # Build hierarchy tree
         result.hierarchy = self._build_hierarchy_tree(sections)
         
-        logger.info(f"Markdown 解析完成: {len(sections)} 个章节")
+        logger.info(f"Markdown parsing complete: {len(sections)} sections")
         
         return result
     
     def _build_hierarchy_tree(self, sections: list[dict]) -> dict:
-        """将扁平章节列表构建为层级树"""
+        """Build flat section list into hierarchy tree"""
         if not sections:
             return {}
         
@@ -105,7 +105,7 @@ class MarkdownExtractor:
                 'children': []
             }
             
-            # 找到合适的父节点
+            # Find appropriate parent node
             while stack and stack[-1]['level'] >= section['level']:
                 stack.pop()
             

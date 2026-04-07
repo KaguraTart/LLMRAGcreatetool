@@ -1,8 +1,8 @@
 """
-级联分类器
-Layer 1: 规则（关键词匹配，毫秒级）
-Layer 2: Embedding 相似度（快速，无需 LLM）
-Layer 3: LLM 推理（最准，但最慢）
+Cascade Classifier
+Layer 1: Rules (keyword matching, millisecond-level)
+Layer 2: Embedding similarity (fast, no LLM needed)
+Layer 3: LLM inference (most accurate, but slowest)
 """
 
 import logging
@@ -22,10 +22,10 @@ class ClassificationResult:
 
 class CascadeClassifier:
     """
-    级联分类器
+    Cascade Classifier
     
-    从快到准逐层尝试：
-    规则 → Embedding → LLM
+    Try from fast to accurate layer by layer:
+    Rules → Embedding → LLM
     """
     
     def __init__(
@@ -37,10 +37,10 @@ class CascadeClassifier:
     ):
         """
         Args:
-            taxonomy: 分类体系，格式：{类别名: [关键词列表]}
-            taxonomy_embeddings: 各类的 embedding（可选）
-            rule_threshold: 规则分类的置信度阈值
-            embedding_threshold: Embedding 分类的置信度阈值
+            taxonomy: Classification taxonomy, format: {category_name: [keyword_list]}
+            taxonomy_embeddings: Embeddings for each category (optional)
+            rule_threshold: Confidence threshold for rule-based classification
+            embedding_threshold: Confidence threshold for embedding-based classification
         """
         self.taxonomy = taxonomy
         self.taxonomy_embeddings = taxonomy_embeddings
@@ -49,10 +49,10 @@ class CascadeClassifier:
     
     def classify(self, text: str, strategy: str = "cascade") -> ClassificationResult:
         """
-        分类文本
+        Classify text
         
         Args:
-            text: 待分类文本
+            text: Text to classify
             strategy: cascade / rule / embedding / llm
             
         Returns:
@@ -68,7 +68,7 @@ class CascadeClassifier:
             return self._classify_cascade(text)
     
     def _classify_rule(self, text: str) -> ClassificationResult:
-        """Layer 1: 关键词规则"""
+        """Layer 1: Keyword rules"""
         text_lower = text.lower()
         scores = {}
         
@@ -92,7 +92,7 @@ class CascadeClassifier:
         )
     
     def _classify_embedding(self, text: str) -> ClassificationResult:
-        """Layer 2: Embedding 相似度"""
+        """Layer 2: Embedding similarity"""
         if not self.taxonomy_embeddings:
             return ClassificationResult(
                 category="unknown",
@@ -109,18 +109,18 @@ class CascadeClassifier:
                 method="embedding"
             )
         
-        # 获取文本 embedding
+        # Get text embedding
         model = SentenceTransformer('BAAI/bge-large-zh-v1.5')
         text_emb = model.encode([text], normalize=True)[0]
         
-        # 与各类别关键词的 embedding 计算相似度
+        # Calculate similarity with category keyword embeddings
         best_cat = None
         best_score = -1
         
         for category, cat_embs in self.taxonomy_embeddings.items():
             if not isinstance(cat_embs, np.ndarray):
                 continue
-            sims = np.dot(text_emb, cat_embs)  # 已归一化
+            sims = np.dot(text_emb, cat_embs)  # Already normalized
             max_sim = float(sims.max())
             
             if max_sim > best_score:
@@ -134,8 +134,8 @@ class CascadeClassifier:
         )
     
     def _classify_llm(self, text: str) -> ClassificationResult:
-        """Layer 3: LLM 推理"""
-        # 此方法需要外部 LLM，可在 pipeline 中调用
+        """Layer 3: LLM inference"""
+        # This method requires an external LLM, call it in the pipeline
         return ClassificationResult(
             category="unknown",
             confidence=0.0,
@@ -143,8 +143,8 @@ class CascadeClassifier:
         )
     
     def _classify_cascade(self, text: str) -> ClassificationResult:
-        """级联分类"""
-        # Layer 1: 规则
+        """Cascade classification"""
+        # Layer 1: Rules
         result = self._classify_rule(text)
         if result.confidence >= self.rule_threshold:
             return result
@@ -154,15 +154,15 @@ class CascadeClassifier:
         if result.confidence >= self.embedding_threshold:
             return result
         
-        # Layer 3: 返回 Embedding 结果（最接近的）
+        # Layer 3: Return Embedding result (closest match)
         return result
     
     def build_taxonomy_embeddings(self):
-        """预计算分类体系的 embedding（用于 Embedding 层加速）"""
+        """Precompute taxonomy embeddings (for Embedding layer speedup)"""
         try:
             from sentence_transformers import SentenceTransformer
         except ImportError:
-            logger.warning("sentence-transformers 未安装")
+            logger.warning("sentence-transformers not installed")
             return
         
         model = SentenceTransformer('BAAI/bge-large-zh-v1.5')
@@ -170,16 +170,16 @@ class CascadeClassifier:
         
         for category, keywords in self.taxonomy.items():
             embs = model.encode(keywords, normalize=True)
-            # 取平均作为类别中心
+            # Take mean as category center
             embeddings[category] = embs.mean(axis=0)
         
         self.taxonomy_embeddings = embeddings
-        logger.info(f"预计算了 {len(embeddings)} 个类别的 embedding")
+        logger.info(f"Precomputed embeddings for {len(embeddings)} categories")
     
     def batch_classify(
         self, 
         texts: list[str],
         strategy: str = "cascade"
     ) -> list[ClassificationResult]:
-        """批量分类"""
+        """Batch classification"""
         return [self.classify(t, strategy=strategy) for t in texts]

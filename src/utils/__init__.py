@@ -1,5 +1,5 @@
 """
-RAGtools 命令行接口
+RAGtools Command Line Interface
 """
 
 import asyncio
@@ -20,7 +20,7 @@ def setup_logging(level: str = "INFO"):
 
 
 async def cmd_extract(args):
-    """提取文档内容"""
+    """Extract document content"""
     setup_logging(args.log)
     
     config = Config.from_yaml(args.config)
@@ -28,17 +28,17 @@ async def cmd_extract(args):
     
     chunks = await pipeline.process(args.file)
     
-    print(f"\n提取完成: {len(chunks)} chunks")
+    print(f"\nExtraction complete: {len(chunks)} chunks")
     for i, chunk in enumerate(chunks[:5]):
         print(f"\n--- Chunk {i+1} ---")
         print(chunk.content[:300] + "..." if len(chunk.content) > 300 else chunk.content)
     
     if len(chunks) > 5:
-        print(f"\n... 还有 {len(chunks) - 5} 个 chunks")
+        print(f"\n... and {len(chunks) - 5} more chunks")
 
 
 async def cmd_process(args):
-    """处理目录"""
+    """Process directory"""
     setup_logging(args.log)
     
     config = Config.from_yaml(args.config)
@@ -51,15 +51,15 @@ async def cmd_process(args):
     
     stats = pipeline.get_stats()
     
-    print(f"\n处理完成:")
-    print(f"  总文档数: {stats['total_documents']}")
-    print(f"  总 chunks: {stats['total_chunks']}")
-    print(f"  总实体数: {stats['total_entities']}")
-    print(f"  失败文档: {stats['failed_documents']}")
+    print(f"\nProcessing complete:")
+    print(f"  Total documents: {stats['total_documents']}")
+    print(f"  Total chunks: {stats['total_chunks']}")
+    print(f"  Total entities: {stats['total_entities']}")
+    print(f"  Failed documents: {stats['failed_documents']}")
 
 
 async def cmd_query(args):
-    """检索"""
+    """Search/Query"""
     setup_logging(args.log)
     
     config = Config.from_yaml(args.config)
@@ -71,7 +71,7 @@ async def cmd_query(args):
         category_filter=args.category,
     )
     
-    print(f"\n找到 {len(results)} 条相关结果:")
+    print(f"\nFound {len(results)} relevant results:")
     for i, r in enumerate(results):
         print(f"\n[{i+1}] (score={r['score']:.3f})")
         print(r["content"][:300] + "..." if len(r["content"]) > 300 else r["content"])
@@ -84,31 +84,31 @@ def main():
     parser.add_argument(
         "-c", "--config",
         default="config.yaml",
-        help="配置文件路径"
+        help="Path to configuration file"
     )
     parser.add_argument(
         "--log",
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="日志级别"
+        help="Log level"
     )
     
     sub = parser.add_subparsers(dest="command", required=True)
     
-    # extract 命令
-    extract = sub.add_parser("extract", help="提取单个文档")
-    extract.add_argument("file", help="文件路径")
+    # extract command
+    extract = sub.add_parser("extract", help="Extract single document")
+    extract.add_argument("file", help="File path")
     
-    # process 命令
-    process = sub.add_parser("process", help="处理整个目录")
-    process.add_argument("directory", help="目录路径")
-    process.add_argument("-w", "--workers", type=int, default=4, help="并发数")
+    # process command
+    process = sub.add_parser("process", help="Process entire directory")
+    process.add_argument("directory", help="Directory path")
+    process.add_argument("-w", "--workers", type=int, default=4, help="Concurrency count")
     
-    # query 命令
-    query = sub.add_parser("query", help="检索")
-    query.add_argument("-q", "--question", required=True, help="查询问题")
-    query.add_argument("-k", type=int, default=5, help="返回数量")
-    query.add_argument("--category", help="按分类过滤")
+    # query command
+    query = sub.add_parser("query", help="Search/Query")
+    query.add_argument("-q", "--question", required=True, help="Query question")
+    query.add_argument("-k", type=int, default=5, help="Number of results to return")
+    query.add_argument("--category", help="Filter by category")
     
     args = parser.parse_args()
     

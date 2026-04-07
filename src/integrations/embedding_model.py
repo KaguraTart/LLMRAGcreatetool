@@ -1,6 +1,6 @@
 """
-Embedding 模型封装
-支持：HuggingFace sentence-transformers / MiniMax API
+Embedding Model Wrapper
+Supports: HuggingFace sentence-transformers / MiniMax API
 """
 
 import logging
@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingModel:
     """
-    Embedding 模型统一封装
+    Unified Embedding Model Wrapper
     
-    支持：
-    - HuggingFace sentence-transformers（本地推理，推荐）
-    - MiniMax API（云端，备用）
+    Supports:
+    - HuggingFace sentence-transformers (local inference, recommended)
+    - MiniMax API (cloud, backup)
     """
     
     def __init__(
@@ -25,7 +25,7 @@ class EmbeddingModel:
         device: str = "cuda",
         batch_size: int = 32,
         normalize: bool = True,
-        minimax_client=None,  # 可选：MiniMax API 客户端
+        minimax_client=None,  # Optional: MiniMax API client
     ):
         self.model_name = model_name
         self.device = device
@@ -37,7 +37,7 @@ class EmbeddingModel:
         self._dimension = None
     
     def _load_model(self):
-        """延迟加载 HuggingFace 模型"""
+        """Lazy load HuggingFace model"""
         if self._model is None:
             try:
                 from sentence_transformers import SentenceTransformer
@@ -46,24 +46,24 @@ class EmbeddingModel:
                     device=self.device,
                 )
                 self._dimension = self._model.get_sentence_embedding_dimension()
-                logger.info(f"加载 Embedding 模型: {self.model_name}, "
-                           f"维度: {self._dimension}")
+                logger.info(f"Loaded Embedding model: {self.model_name}, "
+                           f"dimension: {self._dimension}")
             except ImportError:
                 raise ImportError(
-                    "sentence-transformers 未安装: pip install sentence-transformers"
+                    "sentence-transformers not installed: pip install sentence-transformers"
                 )
             except Exception as e:
-                logger.warning(f"加载模型失败: {e}，降级为 MiniMax API")
+                logger.warning(f"Model loading failed: {e}, falling back to MiniMax API")
                 self._model = None
     
     @property
     def dimension(self) -> int:
-        """获取 embedding 维度"""
+        """Get embedding dimension"""
         if self._dimension is None:
             self._load_model()
         if self._dimension is None and self.minimax_client:
-            # MiniMax API 动态获取
-            return 1024  # MiniMax embedding 维度
+            # MiniMax API dynamic fetch
+            return 1024  # MiniMax embedding dimension
         return self._dimension or 1024
     
     def encode(
@@ -74,16 +74,16 @@ class EmbeddingModel:
         normalize: bool = None,
     ) -> np.ndarray:
         """
-        将文本编码为 embedding 向量
+        Encode text into embedding vectors
         
         Args:
-            texts: 单个文本或文本列表
-            batch_size: 批大小（默认使用 self.batch_size）
-            show_progress: 是否显示进度条
-            normalize: 是否 L2 归一化（默认使用 self.normalize）
+            texts: Single text or list of texts
+            batch_size: Batch size (defaults to self.batch_size)
+            show_progress: Whether to show progress bar
+            normalize: Whether to L2 normalize (defaults to self.normalize)
             
         Returns:
-            numpy.ndarray，shape = (n, dimension)
+            numpy.ndarray, shape = (n, dimension)
         """
         if isinstance(texts, str):
             texts = [texts]
@@ -91,7 +91,7 @@ class EmbeddingModel:
         normalize = normalize if normalize is not None else self.normalize
         batch_size = batch_size or self.batch_size
         
-        # 优先使用本地模型
+        # Prefer local model
         if self._model is not None:
             embeddings = self._model.encode(
                 texts,
@@ -106,12 +106,12 @@ class EmbeddingModel:
         if self.minimax_client:
             return self._encode_via_api(texts)
         
-        raise RuntimeError("既没有本地模型也没有 MiniMax API 客户端")
+        raise RuntimeError("No local model and no MiniMax API client available")
     
     def _encode_via_api(self, texts: list[str]) -> np.ndarray:
-        """通过 MiniMax API 获取 embedding"""
+        """Get embedding via MiniMax API"""
         if not self.minimax_client:
-            raise RuntimeError("MiniMax 客户端未配置")
+            raise RuntimeError("MiniMax client not configured")
         
         embeddings = []
         
@@ -143,8 +143,8 @@ class EmbeddingModel:
                 embeddings.append(emb)
             
             except Exception as e:
-                logger.warning(f"MiniMax embedding 失败: {e}")
-                # 返回零向量
+                logger.warning(f"MiniMax embedding failed: {e}")
+                # Return zero vector
                 dim = 1024  # MiniMax default
                 embeddings.append(np.zeros(dim))
         
@@ -156,15 +156,15 @@ class EmbeddingModel:
         text2: str | list[str],
     ) -> np.ndarray:
         """
-        计算文本对之间的余弦相似度
+        Calculate cosine similarity between text pairs
         
         Returns:
-            相似度矩阵（已归一化后为点积）
+            Similarity matrix (dot product after normalization)
         """
         emb1 = self.encode(text1)
         emb2 = self.encode(text2)
         
-        # 归一化
+        # Normalize
         n1 = emb1 / (np.linalg.norm(emb1, axis=1, keepdims=True) + 1e-8)
         n2 = emb2 / (np.linalg.norm(emb2, axis=1, keepdims=True) + 1e-8)
         
@@ -172,11 +172,11 @@ class EmbeddingModel:
     
     def batch_encode(self, chunks: list[dict], text_key: str = "content") -> np.ndarray:
         """
-        批量编码 Chunk 对象列表
+        Batch encode list of Chunk objects
         
         Args:
-            chunks: Chunk 对象列表（dataclass）
-            text_key: 从 chunk 中提取文本的字段名
+            chunks: List of Chunk objects (dataclass)
+            text_key: Field name to extract text from chunk
         """
         texts = []
         for chunk in chunks:

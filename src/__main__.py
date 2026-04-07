@@ -1,5 +1,5 @@
 """
-LLM RAGtools - 命令行入口
+LLM RAGtools - CLI Entry Point
 """
 
 from .utils import main

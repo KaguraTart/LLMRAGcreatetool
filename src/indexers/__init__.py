@@ -1,5 +1,5 @@
 """
-索引存储模块
+Index Storage Module
 """
 
 from .vector_store import QdrantStore

@@ -1,6 +1,6 @@
 """
-向量数据库封装
-支持：Qdrant（推荐）/ Milvus / Chroma
+Vector Database Wrapper
+Supports: Qdrant (recommended) / Milvus / Chroma
 """
 
 import logging
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class VectorStoreBase:
-    """向量数据库基类"""
+    """Vector database base class"""
     
     def insert(self, chunk_id: str, content: str, embedding: np.ndarray, metadata: dict = None):
         raise NotImplementedError
@@ -30,13 +30,13 @@ class VectorStoreBase:
 
 class QdrantStore(VectorStoreBase):
     """
-    Qdrant 向量数据库封装
+    Qdrant Vector Database Wrapper
     
-    特点：
-    - 高性能 HNSW 索引
-    - 支持元数据过滤
-    - 支持分数重打分
-    - 轻量部署（单机 / Docker）
+    Features:
+    - High-performance HNSW index
+    - Supports metadata filtering
+    - Supports score rescore
+    - Lightweight deployment (standalone / Docker)
     """
     
     def __init__(
@@ -55,21 +55,21 @@ class QdrantStore(VectorStoreBase):
         self._collection_obj = None
     
     def _get_client(self):
-        """延迟连接"""
+        """Lazy connection"""
         if self._client is None:
             try:
                 from qdrant_client import QdrantClient
                 self._client = QdrantClient(url=self.url)
                 self._ensure_collection()
-                logger.info(f"连接 Qdrant: {self.url}, collection: {self.collection}")
+                logger.info(f"Connected to Qdrant: {self.url}, collection: {self.collection}")
             except ImportError:
                 raise ImportError(
-                    "qdrant-client 未安装: pip install qdrant-client"
+                    "qdrant-client not installed: pip install qdrant-client"
                 )
         return self._client
     
     def _ensure_collection(self):
-        """确保 Collection 存在"""
+        """Ensure collection exists"""
         from qdrant_client import QdrantClient
         from qdrant_client.models import (
             Distance, VectorParams, OptimizersConfig2_0
@@ -77,7 +77,7 @@ class QdrantStore(VectorStoreBase):
         
         client = self._client
         
-        # 检查是否存在
+        # Check if it exists
         try:
             collections = client.get_collections().collections
             exists = any(c.name == self.collection for c in collections)
@@ -98,10 +98,10 @@ class QdrantStore(VectorStoreBase):
                     distance=distance_map.get(self.distance, Distance.COSINE),
                 ),
                 optimizer_config=OptimizersConfig2_0(
-                    indexing_threshold=20000,  # 超过 20000 向量开始建索引
+                    indexing_threshold=20000,  # Start indexing after 20000 vectors
                 )
             )
-            logger.info(f"创建 Collection: {self.collection}")
+            logger.info(f"Created collection: {self.collection}")
     
     @property
     def collection_obj(self):
@@ -121,7 +121,7 @@ class QdrantStore(VectorStoreBase):
         embedding: np.ndarray,
         metadata: dict = None,
     ):
-        """插入单个向量"""
+        """Insert single vector"""
         client = self._get_client()
         
         from qdrant_client.models import PointStruct, Payload
@@ -145,7 +145,7 @@ class QdrantStore(VectorStoreBase):
         items: list[dict],
     ):
         """
-        批量插入
+        Batch insert
         
         items: [{"chunk_id": str, "content": str, "embedding": np.ndarray, "metadata": dict}]
         """
@@ -169,7 +169,7 @@ class QdrantStore(VectorStoreBase):
             points=points
         )
         
-        logger.info(f"批量插入 {len(points)} 个向量")
+        logger.info(f"Batch inserted {len(points)} vectors")
     
     def search(
         self,
@@ -179,7 +179,7 @@ class QdrantStore(VectorStoreBase):
         score_threshold: float = 0.0,
     ) -> list[dict]:
         """
-        向量检索
+        Vector search
         
         Returns:
             [{"id": str, "content": str, "score": float, "metadata": dict}, ...]
@@ -188,7 +188,7 @@ class QdrantStore(VectorStoreBase):
         
         from qdrant_client.models import Filter, FieldCondition, MatchValue, Range
         
-        # 构造过滤条件
+        # Build filter conditions
         q_filter = None
         if filter_expr:
             must_clauses = []
@@ -231,7 +231,7 @@ class QdrantStore(VectorStoreBase):
         ]
     
     def delete(self, chunk_id: str):
-        """删除向量"""
+        """Delete vector"""
         client = self._get_client()
         
         from qdrant_client.models import Filter, FieldCondition, MatchValue
@@ -247,7 +247,7 @@ class QdrantStore(VectorStoreBase):
         )
     
     def count(self) -> int:
-        """返回向量总数"""
+        """Return total vector count"""
         client = self._get_client()
         info = client.get_collection(self.collection)
         return info.vectors_count
@@ -255,9 +255,9 @@ class QdrantStore(VectorStoreBase):
 
 class ChromaStore(VectorStoreBase):
     """
-    Chroma 向量数据库封装（轻量，单机）
+    Chroma Vector Database Wrapper (lightweight, standalone)
     
-    适合：本地开发 / 小规模知识库（< 100k 向量）
+    Suitable for: local development / small-scale knowledge base (< 100k vectors)
     """
     
     def __init__(
@@ -288,10 +288,10 @@ class ChromaStore(VectorStoreBase):
                     metadata={"description": "RAG Knowledge Base"}
                 )
                 
-                logger.info(f"Chroma Collection: {self.collection_name}")
+                logger.info(f"Chroma collection: {self.collection_name}")
             
             except ImportError:
-                raise ImportError("chroma 未安装: pip install chromadb")
+                raise ImportError("chroma not installed: pip install chromadb")
         
         return self._collection
     
@@ -331,7 +331,7 @@ class ChromaStore(VectorStoreBase):
             output.append({
                 "id": results["ids"][0][i],
                 "content": results["documents"][0][i],
-                "score": 1.0 - results["distances"][0][i],  # Chroma 存的是距离
+                "score": 1.0 - results["distances"][0][i],  # Chroma stores distance
                 "metadata": results["metadatas"][0][i]
             })
         

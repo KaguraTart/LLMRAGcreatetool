@@ -1,6 +1,6 @@
 """
-配置管理模块
-支持 YAML 配置文件 + 环境变量覆盖
+Configuration Management Module
+Supports YAML config file + environment variable override
 """
 
 import os
@@ -71,7 +71,8 @@ class NERConfig(BaseModel):
 class ClassifierConfig(BaseModel):
     cascade: bool = True
     taxonomy: list[str] = Field(default_factory=lambda: [
-        "技术文档", "产品规格", "政策法规", "研究报告", "操作手册", "常见问题"
+        "Technical Documentation", "Product Specification", "Policy & Regulation",
+        "Research Report", "Operation Manual", "FAQ"
     ])
     rule_confidence_threshold: float = 0.9
     embedding_confidence_threshold: float = 0.7
@@ -91,7 +92,7 @@ class DedupConfig(BaseModel):
 
 
 class Config(BaseModel):
-    """全局配置"""
+    """Global configuration"""
     minimax: MiniMaxConfig = MiniMaxConfig()
     claude_code: ClaudeCodeConfig = ClaudeCodeConfig()
     gemini_cli: GeminiCLIConfig = GeminiCLIConfig()
@@ -105,20 +106,20 @@ class Config(BaseModel):
 
     @classmethod
     def from_yaml(cls, path: str) -> "Config":
-        """从 YAML 文件加载配置"""
+        """Load configuration from YAML file"""
         with open(path, 'r', encoding='utf-8') as f:
             raw = yaml.safe_load(f)
         
-        # 处理环境变量替换：${VAR_NAME}
+        # Handle environment variable substitution: ${VAR_NAME}
         raw = cls._resolve_env_vars(raw)
         
         return cls(**raw)
     
     @classmethod
     def _resolve_env_vars(cls, obj):
-        """递归解析 ${ENV_VAR} 形式的环境变量引用"""
+        """Recursively resolve ${ENV_VAR} style environment variable references"""
         if isinstance(obj, str):
-            # 匹配 ${VAR_NAME} 或 ${VAR_NAME:default}
+            # Match ${VAR_NAME} or ${VAR_NAME:default}
             pattern = r'\$\{([^}:]+)(?::([^}]*))?\}'
             
             def replacer(match):
@@ -138,7 +139,7 @@ class Config(BaseModel):
             return obj
     
     def get_api_key(self, provider: str = "minimax") -> str:
-        """获取 API Key"""
+        """Get API Key"""
         if provider == "minimax":
             return os.environ.get("MINIMAX_API_KEY", self.minimax.api_key)
         elif provider == "gemini":
@@ -146,7 +147,7 @@ class Config(BaseModel):
         return ""
     
     def set_api_key(self, provider: str, key: str):
-        """设置 API Key"""
+        """Set API Key"""
         if provider == "minimax":
             self.minimax.api_key = key
         elif provider == "gemini":

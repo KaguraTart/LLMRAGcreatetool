@@ -1,6 +1,6 @@
 """
-智能分块器
-支持：固定长度 / 递归字符 / 语义 / 层级感知 四种策略
+Intelligent Text Chunker
+Supports: fixed-length / recursive character / semantic / heading-aware four strategies
 """
 
 import logging
@@ -11,17 +11,17 @@ from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 
-# 可选 tiktoken
+# Optional tiktoken
 try:
     import tiktoken
-    _ENCODER = None  # 延迟加载
+    _ENCODER = None  # Lazy load
 except ImportError:
     _ENCODER = None
 
 
 @dataclass
 class Chunk:
-    """知识片段"""
+    """Knowledge chunk"""
     chunk_id: str
     content: str
     source: str = ""
@@ -34,13 +34,13 @@ class Chunk:
 
 class ChunkBuilder:
     """
-    智能分块构建器
+    Intelligent text chunking builder
     
-    四种策略：
-    - fixed:      固定 token 数分块（最快，最简单）
-    - recursive:  递归字符分块（按段落/句子边界切分）
-    - semantic:   语义分块（按 embedding 相似度切分）
-    - heading:    层级感知分块（按 Markdown/PDF 标题切分）
+    Four strategies:
+    - fixed:      Fixed token count chunking (fastest, simplest)
+    - recursive:  Recursive character chunking (split at paragraph/sentence boundaries)
+    - semantic:   Semantic chunking (split by embedding similarity)
+    - heading:    Heading-aware chunking (split by Markdown/PDF headings)
     """
     
     def __init__(
@@ -58,27 +58,27 @@ class ChunkBuilder:
         self.min_chunk_size = min_chunk_size
         self.respect_headings = respect_headings
         
-        # 延迟加载 tokenizer
+        # Lazy load tokenizer
         self._encoder = None
         self._encoding_name = encoding_name
     
     @property
     def encoder(self):
-        """延迟加载 tokenizer"""
+        """Lazy load tokenizer"""
         if self._encoder is None and _ENCODER is not None:
             try:
                 self._encoder = tiktoken.get_encoding(self._encoding_name)
             except Exception:
-                logger.warning(f"无法加载 tokenizer {self._encoding_name}，"
-                             "使用字符数代替")
+                logger.warning(f"Failed to load tokenizer {self._encoding_name}, "
+                             "using character count instead")
         return self._encoder
     
     def count_tokens(self, text: str) -> int:
-        """计算文本的 token 数"""
+        """Calculate token count for text"""
         if self.encoder:
             return len(self.encoder.encode(text))
         else:
-            # Fallback: 粗略估算（约 4 字符 = 1 token）
+            # Fallback: rough estimate (~4 chars = 1 token)
             return len(text) // 4
     
     def chunk_text(
@@ -90,17 +90,17 @@ class ChunkBuilder:
         metadata: dict = None,
     ) -> list[Chunk]:
         """
-        将文本分块
+        Chunk text
         
         Args:
-            text: 待分块文本
-            source: 来源文件
-            page_number: 起始页码
-            section_title: 所属章节标题
-            metadata: 其他元数据
+            text: Text to chunk
+            source: Source file
+            page_number: Starting page number
+            section_title: Section heading
+            metadata: Other metadata
             
         Returns:
-            Chunk 列表
+            List of Chunks
         """
         if not text or len(text.strip()) < self.min_chunk_size:
             return []
@@ -116,7 +116,7 @@ class ChunkBuilder:
         else:
             chunks = self._chunk_recursive(text)
         
-        # 填充元数据
+        # Populate metadata
         for chunk in chunks:
             chunk.source = source
             chunk.page_number = page_number
@@ -125,17 +125,17 @@ class ChunkBuilder:
             chunk.token_count = self.count_tokens(chunk.content)
             chunk.chunk_id = self._generate_id(chunk)
         
-        # 过滤过短的 chunk
+        # Filter out too-short chunks
         chunks = [c for c in chunks 
                   if len(c.content.strip()) >= self.min_chunk_size]
         
-        logger.debug(f"分块完成: {len(chunks)} chunks, "
-                    f"策略={self.strategy}")
+        logger.debug(f"Chunking complete: {len(chunks)} chunks, "
+                    f"strategy={self.strategy}")
         
         return chunks
     
     def _chunk_fixed(self, text: str) -> list[Chunk]:
-        """固定长度分块"""
+        """Fixed-length chunking"""
         tokens = self.encoder.encode(text) if self.encoder else list(text)
         
         chunks = []
@@ -157,15 +157,15 @@ class ChunkBuilder:
     
     def _chunk_recursive(self, text: str) -> list[Chunk]:
         """
-        递归字符分块
+        Recursive character chunking
         
-        优先在大分隔符处切分：
-        双重换行 → 换行 → 句号+空格 → 空格
+        Prioritize splitting at large separators:
+        Double newline → newline → period + space → space
         """
         separators = ['\n\n', '\n', '. ', ' ', '']
         
         def split_text(text: str, sep_idx: int = 0) -> list[str]:
-            """递归切分"""
+            """Recursive splitting"""
             if sep_idx >= len(separators):
                 return [text] if text else []
             
@@ -186,7 +186,7 @@ class ChunkBuilder:
                 else:
                     if current:
                         merged.append(current)
-                    # 如果单个 part 就超出限制，继续细分
+                    # If single part exceeds limit, split further
                     if sep_idx + 1 < len(separators):
                         sub_parts = split_text(part, sep_idx + 1)
                         merged.extend(sub_parts[:-1] if sub_parts else [])
@@ -201,7 +201,7 @@ class ChunkBuilder:
         
         raw_chunks = split_text(text)
         
-        # 处理重叠
+        # Handle overlap
         if self.overlap > 0 and len(raw_chunks) > 1:
             raw_chunks = self._add_overlap(raw_chunks)
         
@@ -209,7 +209,7 @@ class ChunkBuilder:
                 for c in raw_chunks if c.strip()]
     
     def _add_overlap(self, chunks: list[str]) -> list[str]:
-        """为相邻 chunks 添加重叠"""
+        """Add overlap between adjacent chunks"""
         if len(chunks) <= 1:
             return chunks
         
@@ -219,7 +219,7 @@ class ChunkBuilder:
             prev = result[-1]
             curr = chunks[i]
             
-            # 计算重叠部分
+            # Calculate overlap portion
             prev_tokens = self.count_tokens(prev)
             overlap_tokens = min(
                 self.overlap,
@@ -227,7 +227,7 @@ class ChunkBuilder:
             )
             
             if overlap_tokens > 0:
-                # 从前一个 chunk 末尾取 overlap_tokens 个 token
+                # Take overlap_tokens from the end of the previous chunk
                 if self.encoder:
                     prev_tok_list = self.encoder.encode(prev)
                     overlap_toks = prev_tok_list[-overlap_tokens:]
@@ -244,32 +244,32 @@ class ChunkBuilder:
     
     def _chunk_semantic(self, text: str) -> list[Chunk]:
         """
-        语义分块（按 embedding 相似度切分）
+        Semantic chunking (split by embedding similarity)
         
-        原理：相邻句子的 embedding 相似度突然下降 = 话题转换点
+        Principle: sudden drop in embedding similarity between adjacent sentences = topic shift point
         """
         try:
             from sentence_transformers import SentenceTransformer
             from sklearn.metrics.pairwise import cosine_similarity
             import numpy as np
         except ImportError:
-            logger.warning("semantic chunking 需要 sentence-transformers，"
-                         "降级为 recursive 策略")
+            logger.warning("Semantic chunking requires sentence-transformers, "
+                         "falling back to recursive strategy")
             return self._chunk_recursive(text)
         
-        # 按句子切分
+        # Split by sentence
         sentences = [s.strip() for s in text.split('。') if s.strip()]
         if not sentences:
             return self._chunk_recursive(text)
         
-        # 添加句号（切分时去掉了）
+        # Add period back (removed during splitting)
         sentences = [s + "。" if not s.endswith('。') else s for s in sentences]
         
         # Embedding
         model = SentenceTransformer('BAAI/bge-large-zh-v1.5')
         embeddings = model.encode(sentences, normalize=True)
         
-        # 计算相邻句子的相似度
+        # Calculate similarity between adjacent sentences
         similarities = []
         for i in range(len(embeddings) - 1):
             sim = cosine_similarity(
@@ -277,7 +277,7 @@ class ChunkBuilder:
             )[0, 0]
             similarities.append(sim)
         
-        # 相似度 < 阈值处切分
+        # Split at points where similarity < threshold
         threshold = 0.7
         boundaries = [0]
         for i, sim in enumerate(similarities):
@@ -285,7 +285,7 @@ class ChunkBuilder:
                 boundaries.append(i + 1)
         boundaries.append(len(sentences))
         
-        # 构建 chunks
+        # Build chunks
         chunks = []
         for i in range(len(boundaries) - 1):
             start, end = boundaries[i], boundaries[i + 1]
@@ -294,13 +294,13 @@ class ChunkBuilder:
             if len(chunk_text) >= self.min_chunk_size:
                 chunks.append(Chunk(chunk_id="", content=chunk_text))
             elif chunks:
-                # 合并过短的 chunk 到前一个
+                # Merge too-short chunks into the previous one
                 chunks[-1].content += chunk_text
         
         return chunks
     
     def _chunk_by_headings(self, text: str) -> list[Chunk]:
-        """按 Markdown/PDF 标题层级分块"""
+        """Chunk by Markdown/PDF heading hierarchy"""
         import re
         HEADING_RE = re.compile(r'^(#{1,6})\s+(.+)$', re.MULTILINE)
         
@@ -321,7 +321,7 @@ class ChunkBuilder:
             if len(section_text) < self.min_chunk_size:
                 continue
             
-            # 如果 section 过长，进一步递归分块
+            # If section is too long, further split recursively
             if self.count_tokens(section_text) > self.chunk_size * 1.5:
                 sub_chunks = self._chunk_recursive(section_text)
                 for sc in sub_chunks:
@@ -337,7 +337,7 @@ class ChunkBuilder:
         return chunks
     
     def _generate_id(self, chunk: Chunk) -> str:
-        """生成 chunk 唯一 ID"""
+        """Generate unique chunk ID"""
         raw = f"{chunk.content[:100]}{chunk.source}{chunk.page_number}"
         return hashlib.md5(raw.encode()).hexdigest()[:12]
 
@@ -348,7 +348,7 @@ def chunk_text(
     chunk_size: int = 500,
     **kwargs
 ) -> list[Chunk]:
-    """便捷函数：快速分块"""
+    """Convenience function: quick chunking"""
     builder = ChunkBuilder(
         strategy=strategy,
         chunk_size=chunk_size,

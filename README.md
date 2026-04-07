@@ -1,170 +1,153 @@
 # LLMRAGcreatetool
 
-> 基于开源工具构建的 RAG 知识库处理工具链。覆盖 PDF 解析 → 智能分块 → 实体抽取 → 分类 → 向量索引全流程。
+> For Chinese documentation, see [README_zh.md](./README_zh.md)
 
-## 项目背景
+A production-ready RAG knowledge base processing toolkit. Covers the full pipeline from **PDF parsing → smart chunking → entity extraction → classification → vector indexing**.
 
-本工具基于 [RAG 知识库知识处理工作流](https://github.com/KaguraTart/blog) 技术调研文章实现，重点探索：
+## Features
 
-1. **LLM 在知识处理各环节的适用性**：理解 vs 提取的边界
-2. **Claude Code CLI / Gemini CLI 的能力边界**：作为 Agent 的使用方式
-3. **MiniMax 多模态 API**：图像理解 + 文本生成的融合
-4. **全开源工具栈**：最小化商业依赖
+- 🧩 **Multi-format support**: PDF / Word / Markdown / HTML / scanned images
+- 📊 **Dual table processing**: Rule extraction + LLM validation
+- 🖼️ **Multimodal understanding**: MiniMax API for chart/image description generation
+- 🧠 **Smart chunking**: Fixed / recursive / semantic / heading-aware strategies
+- 🔍 **Hybrid retrieval**: Vector + BM25 + Knowledge Graph
+- ⚡ **Async concurrency**: Batch processing for high throughput
+- 🛠️ **CLI agent**: Claude Code CLI integration for complex tasks (optional)
 
-## 架构概览
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────┐
-│                   输入文档层                       │
-│  PDF · Word · Markdown · HTML · 图片/扫描件      │
-└────────────────────┬────────────────────────────┘
-                     ▼
-┌─────────────────────────────────────────────────┐
-│  解析层（开源工具）                                │
-│  PyMuPDF · pdfplumber · EasyOCR · MarkItDown    │
-└────────────────────┬────────────────────────────┘
-                     ▼
-┌─────────────────────────────────────────────────┐
-│  处理层（LLM + 规则）                             │
-│  智能分块 · 实体抽取 · 关系抽取 · 质量评分        │
-│  MiniMax API · Sentence-Transformers             │
-└────────────────────┬────────────────────────────┘
-                     ▼
-┌─────────────────────────────────────────────────┐
-│  索引层（开源数据库）                              │
-│  Qdrant · Milvus · Neo4j (可选)                  │
-└─────────────────────────────────────────────────┘
+Input Layer
+  PDF · Word · Markdown · HTML · scanned images
+       ↓
+Extraction Layer (open-source tools)
+  PyMuPDF · pdfplumber · EasyOCR · MarkItDown
+       ↓
+Processing Layer (LLM + rules)
+  Smart chunking · entity extraction · quality scoring
+  MiniMax API · sentence-transformers
+       ↓
+Indexing Layer (open-source databases)
+  Qdrant · Milvus · Neo4j (optional)
 ```
 
-## 核心特性
+## Quick Start
 
-- 🧩 **多格式支持**：PDF / Word / Markdown / HTML / 图片
-- 📊 **表格双重处理**：规则提取 + LLM 校验
-- 🖼️ **多模态理解**：MiniMax 图像描述生成
-- 🧠 **智能分块**：按语义/章节/层级自适应分块
-- 🔍 **混合检索**：向量 + BM25 + 知识图谱
-- ⚡ **异步并发**：批量处理，吞吐量高
-- 🛠️ **CLI Agent**：Claude Code CLI / Gemini CLI 集成（可选）
-
-## 快速开始
-
-### 安装依赖
+### Installation
 
 ```bash
 pip install -r requirements.txt
 
-# 可选：OCR 支持
+# Optional: OCR support
 pip install easyocr pytesseract
 # Ubuntu/Debian: sudo apt install tesseract-ocr tesseract-ocr-chi-sim
 
-# 可选：向量数据库
+# Optional: vector database
 pip install qdrant-client
-
-# 可选：知识图谱
-pip install neo4j
 ```
 
-### 基础使用
+### Basic Usage
 
 ```python
 from ragtools.pipeline import RAGPipeline
 from ragtools.config import Config
 
-# 加载配置
+# Load config
 config = Config.from_yaml("config.yaml")
 
-# 初始化流程
+# Initialize pipeline
 pipeline = RAGPipeline(config)
 
-# 处理单个文档
+# Process single document
 chunks = await pipeline.process("document.pdf")
 
-# 批量处理目录
+# Batch process directory
 all_chunks = await pipeline.process_corpus("./knowledge_base/")
 
-# 检索
-results = await pipeline.query("相关问题是什么？")
+# Query
+results = await pipeline.query("Your question here?")
 ```
 
-### CLI 使用
+### CLI Usage
 
 ```bash
-# 解析 PDF
-python -m ragtools.cli extract document.pdf
+# Extract document
+python -m src extract document.pdf
 
-# 完整工作流
-python -m ragtools.cli process ./docs/ --output ./output/
+# Full pipeline
+python -m src process ./docs/ --output ./output/
 
-# 交互式检索
-python -m ragtools.cli query --question "你的问题"
+# Query
+python -m src query --question "Your question"
 ```
 
-## Claude Code CLI 集成说明
+## Claude Code CLI Integration
 
-**关于 Claude Code CLI：**
+Claude Code CLI (`claude-code` npm package) is **Anthropic's official commercial tool, not open-source**. This project integrates it via `subprocess` for complex multi-step reasoning tasks:
 
-Claude Code CLI（`claude-code` npm 包）是 Anthropic 官方发布的终端工具，**不是开源软件**。本项目通过 `subprocess` 调用它来执行复杂的多步推理任务：
-
-- PDF 质量审查（跨段落逻辑一致性检查）
-- 复杂表格语义理解
-- 文档结构推理（当规则失效时）
+- PDF quality review (cross-paragraph logical consistency checks)
+- Complex table semantic understanding
+- Document structure inference (when rules fail)
 
 ```bash
-# 安装 Claude Code CLI（需要 ANTHROPIC_API_KEY）
+# Install Claude Code CLI (requires ANTHROPIC_API_KEY)
 npm install -g @anthropic-ai/claude-code
 export ANTHROPIC_API_KEY="your-key-here"
 ```
 
-Claude Code CLI 作为 Agent 使用时，本质上是通过官方 API 调用 Claude 模型。它适合：
-- ✅ 多步推理的复杂分析任务
-- ✅ 需要浏览文件系统、搜索代码的分析
-- ✅ 作为 fallback 处理规则无法处理的边缘情况
+## Tool Comparison
 
-## 工具对比
-
-| 环节 | 本项目方案 | 备选方案 |
-|------|----------|---------|
-| PDF 文字 | PyMuPDF | pdfminer, pdfplumber |
+| Task | Our Approach | Alternative |
+|------|------------|-------------|
+| PDF text | PyMuPDF | pdfminer, pdfplumber |
 | OCR | EasyOCR + Tesseract | PaddleOCR, TrOCR |
-| 表格 | pdfplumber + LLM 校验 | Camelot, Tabula |
-| 图表理解 | MiniMax 多模态 API | GPT-4V, Claude Vision |
-| 实体抽取 | MiniMax API (函数调用) | spaCy, transformers NER |
-| 向量存储 | Qdrant | Milvus, Chroma, FAISS |
-| 图数据库 | Neo4j (可选) | NebulaGraph |
+| Tables | pdfplumber + LLM validation | Camelot, Tabula |
+| Charts | MiniMax multimodal API | GPT-4V, Claude Vision |
+| Entity extraction | MiniMax API (function calling) | spaCy, transformers NER |
+| Vector store | Qdrant | Milvus, Chroma, FAISS |
+| Graph DB | Neo4j (optional) | NebulaGraph |
 | Embedding | HuggingFace sentence-transformers | OpenAI, MiniMax |
 
-## 项目结构
+## Project Structure
 
 ```
 LLMRAGcreatetool/
-├── config.yaml              # 全局配置
+├── config.yaml              # Global configuration
 ├── requirements.txt
 ├── README.md
+├── README_zh.md            # Chinese documentation
 ├── src/
-│   ├── extractors/         # 文档解析器
-│   │   ├── pdf_extractor.py
-│   │   ├── docx_extractor.py
-│   │   ├── md_extractor.py
-│   │   └── ocr_extractor.py
-│   ├── processors/         # 知识处理器
-│   │   ├── chunker.py      # 智能分块
-│   │   ├── ner.py          # 实体抽取（MiniMax API）
-│   │   ├── classifier.py   # 知识分类
-│   │   └── quality.py      # 质量评分
-│   ├── indexers/          # 索引存储
-│   │   ├── vector_store.py # 向量索引
-│   │   └── kg_indexer.py  # 知识图谱
-│   ├── integrations/       # 外部工具集成
-│   │   ├── minimax_api.py # MiniMax API 封装
-│   │   ├── claude_cli.py  # Claude Code CLI
-│   │   └── gemini_cli.py  # Gemini CLI
-│   ├── pipeline.py         # 主工作流
-│   └── config.py           # 配置管理
-├── tests/
-│   └── test_pipeline.py
-└── examples/
-    └── demo_pipeline.py
+│   ├── extractors/         # Document parsers
+│   │   ├── pdf_extractor.py   # PDF multi-layer parsing
+│   │   ├── docx_extractor.py # Word document parsing
+│   │   ├── md_extractor.py   # Markdown semantic parsing
+│   │   └── ocr_extractor.py   # EasyOCR + Tesseract
+│   ├── processors/         # Knowledge processors
+│   │   ├── chunker.py        # 4 chunking strategies
+│   │   ├── classifier.py     # Cascade classifier
+│   │   └── quality.py        # LLM self-evaluation
+│   ├── integrations/       # External tool integration
+│   │   ├── minimax_api.py   # MiniMax API wrapper
+│   │   └── embedding_model.py # HF + MiniMax dual backend
+│   ├── indexers/           # Index storage
+│   │   └── vector_store.py   # Qdrant + Chroma
+│   ├── pipeline.py          # Main pipeline
+│   └── config.py            # Configuration
+├── examples/
+│   └── demo_pipeline.py
+└── tests/
 ```
+
+## Tech Stack
+
+| Layer | Technologies |
+|-------|------------|
+| PDF parsing | PyMuPDF, pdfplumber, Nougat |
+| OCR | EasyOCR, Tesseract |
+| Embedding | sentence-transformers (BAAI/bge-large-zh-v1.5) |
+| Vector DB | Qdrant, Milvus, Chroma |
+| LLM | MiniMax API (multimodal + function calling) |
+| Config | Pydantic, YAML |
 
 ## License
 

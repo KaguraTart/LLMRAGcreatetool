@@ -1,7 +1,7 @@
 """
-OCR 处理器
-支持：Tesseract + EasyOCR 双引擎
-用于：扫描件 PDF、图片文字识别
+OCR Processor
+Supports: Tesseract + EasyOCR dual engine
+Used for: scanned PDFs, image text recognition
 """
 
 import logging
@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 class OCRProcessor:
     """
-    OCR 处理器
+    OCR Processor
     
-    双引擎策略：
-    - EasyOCR: 多语言支持好，GPU 加速
-    - Tesseract: 安装简单，中文需额外语言包
+    Dual engine strategy:
+    - EasyOCR: Good multilingual support, GPU acceleration
+    - Tesseract: Easy to install, Chinese requires additional language pack
     """
     
     def __init__(
@@ -28,12 +28,12 @@ class OCRProcessor:
         gpu: bool = True,
     ):
         self.engine = engine
-        self.languages = languages or ['ch_sim', 'en']  # 中文简体 + 英文
+        self.languages = languages or ['ch_sim', 'en']  # Simplified Chinese + English
         self.gpu = gpu
         self._reader = None
     
     def _get_easyocr_reader(self):
-        """延迟加载 EasyOCR 引擎"""
+        """Lazy load EasyOCR engine"""
         if self._reader is None:
             try:
                 import easyocr
@@ -42,24 +42,24 @@ class OCRProcessor:
                     gpu=self.gpu,
                     verbose=False
                 )
-                logger.info("EasyOCR 引擎初始化完成")
+                logger.info("EasyOCR engine initialized")
             except ImportError:
                 raise ImportError(
-                    "EasyOCR 未安装: pip install easyocr"
+                    "EasyOCR not installed: pip install easyocr"
                 )
         return self._reader
     
     def _get_tesseract(self):
-        """延迟加载 Tesseract"""
+        """Lazy load Tesseract"""
         if self._reader is None:
             try:
                 import pytesseract
                 from PIL import Image
                 self._reader = {'pytesseract': pytesseract, 'PIL': Image}
-                logger.info("Tesseract OCR 引擎初始化完成")
+                logger.info("Tesseract OCR engine initialized")
             except ImportError:
                 raise ImportError(
-                    "pytesseract 未安装: pip install pytesseract"
+                    "pytesseract not installed: pip install pytesseract"
                 )
         return self._reader
     
@@ -69,14 +69,14 @@ class OCRProcessor:
         return_confidence: bool = False
     ):
         """
-        对图片执行 OCR
+        Perform OCR on image
         
         Args:
-            image_bytes: 图片字节数据
-            return_confidence: 是否返回置信度
+            image_bytes: Image byte data
+            return_confidence: Whether to return confidence score
             
         Returns:
-            识别的文字，或 (文字, 置信度) 元组
+            Recognized text, or (text, confidence) tuple
         """
         if self.engine in ("easyocr", "auto"):
             return self._ocr_easyocr(image_bytes, return_confidence)
@@ -88,11 +88,11 @@ class OCRProcessor:
         image_bytes: bytes,
         return_confidence: bool
     ):
-        """EasyOCR 引擎"""
+        """EasyOCR engine"""
         try:
             reader = self._get_easyocr_reader()
         except ImportError:
-            logger.warning("EasyOCR 不可用，尝试 Tesseract")
+            logger.warning("EasyOCR not available, trying Tesseract")
             return self._ocr_tesseract(image_bytes, return_confidence)
         
         from PIL import Image
@@ -127,11 +127,11 @@ class OCRProcessor:
         image_bytes: bytes,
         return_confidence: bool
     ):
-        """Tesseract 引擎"""
+        """Tesseract engine"""
         try:
             engine = self._get_tesseract()
         except ImportError:
-            raise RuntimeError("所有 OCR 引擎均不可用")
+            raise RuntimeError("All OCR engines are unavailable")
         
         pytesseract = engine['pytesseract']
         Image = engine['PIL']
@@ -158,14 +158,14 @@ class OCRProcessor:
     
     def ocr_pdf_page(self, pdf_path: str, page_num: int) -> Optional[str]:
         """
-        对 PDF 指定页面执行 OCR
+        Perform OCR on specified PDF page
         
         Args:
-            pdf_path: PDF 文件路径
-            page_num: 页码（从 0 开始）
+            pdf_path: PDF file path
+            page_num: Page number (starting from 0)
             
         Returns:
-            识别的文字，失败返回 None
+            Recognized text, None if failed
         """
         try:
             import pymupdf
@@ -176,7 +176,7 @@ class OCRProcessor:
                 
                 page = doc[page_num]
                 
-                # 将页面渲染为图像
+                # Render page as image
                 mat = pymupdf.Matrix(2, 2)
                 pix = page.get_pixmap(matrix=mat)
                 image_bytes = pix.tobytes("png")
@@ -184,14 +184,14 @@ class OCRProcessor:
             text = self.ocr_image(image_bytes)
             
             if text and len(text.strip()) > 10:
-                logger.debug(f"OCR 成功: PDF page {page_num}, "
-                           f"识别 {len(text)} 字符")
+                logger.debug(f"OCR success: PDF page {page_num}, "
+                           f"recognized {len(text)} characters")
                 return text
             
             return None
             
         except Exception as e:
-            logger.warning(f"PDF OCR 失败 (page {page_num}): {e}")
+            logger.warning(f"PDF OCR failed (page {page_num}): {e}")
             return None
     
     def batch_ocr_images(
@@ -200,14 +200,14 @@ class OCRProcessor:
         max_workers: int = 4
     ) -> list[Optional[str]]:
         """
-        批量 OCR 多张图片（并发）
+        Batch OCR multiple images (concurrent)
         
         Args:
-            image_paths: 图片路径列表
-            max_workers: 最大并发数
+            image_paths: List of image paths
+            max_workers: Maximum concurrency
             
         Returns:
-            识别结果列表（失败项为 None）
+            List of recognition results (None for failed items)
         """
         from concurrent.futures import ThreadPoolExecutor, as_completed
         
@@ -224,11 +224,11 @@ class OCRProcessor:
                 try:
                     results[idx] = future.result()
                 except Exception as e:
-                    logger.warning(f"批量 OCR 失败: {e}")
+                    logger.warning(f"Batch OCR failed: {e}")
         
         return results
     
     def _read_image(self, path: str) -> bytes:
-        """读取图片文件"""
+        """Read image file"""
         with open(path, 'rb') as f:
             return f.read()

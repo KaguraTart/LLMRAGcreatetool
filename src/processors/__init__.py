@@ -1,5 +1,5 @@
 """
-知识处理器模块
+Knowledge Processor Module
 """
 
 from .chunker import ChunkBuilder, chunk_text

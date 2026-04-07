@@ -1,6 +1,6 @@
 """
-RAG 知识处理主工作流
-串联：解析 → 分块 → 实体抽取 → 分类 → 去重 → 质量评分 → 索引
+RAG Knowledge Processing Main Workflow
+Pipeline: Parsing → Chunking → Entity Extraction → Classification → Deduplication → Quality Scoring → Indexing
 """
 
 import os
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ProcessedChunk:
-    """处理完成的知识片段"""
+    """Processed knowledge chunk"""
     chunk_id: str
     content: str
     source: str = ""
@@ -44,35 +44,35 @@ class ProcessedChunk:
 
 class RAGPipeline:
     """
-    RAG 知识处理完整工作流
+    Complete RAG knowledge processing workflow
     
-    使用示例：
+    Usage example:
     
     ```python
     config = Config.from_yaml("config.yaml")
     pipeline = RAGPipeline(config)
     
-    # 处理文档
+    # Process a document
     chunks = await pipeline.process("document.pdf")
     
-    # 批量处理目录
+    # Batch process a directory
     all_chunks = await pipeline.process_corpus("./knowledge_base/")
     
-    # 检索
-    results = await pipeline.query("相关问题")
+    # Query
+    results = await pipeline.query("related question")
     ```
     """
     
     def __init__(self, config: Config):
         self.config = config
         
-        # 初始化各模块
+        # Initialize modules
         self._init_extractors()
         self._init_processors()
         self._init_integrations()
         self._init_indexers()
         
-        # 统计
+        # Statistics
         self.stats = {
             "total_documents": 0,
             "total_chunks": 0,
@@ -81,7 +81,7 @@ class RAGPipeline:
         }
     
     def _init_extractors(self):
-        """初始化解析器"""
+        """Initialize parsers"""
         self.pdf_extractor = PDFExtractor(
             extract_images=True,
             extract_tables=True,
@@ -91,7 +91,7 @@ class RAGPipeline:
         self.md_extractor = MarkdownExtractor()
     
     def _init_processors(self):
-        """初始化处理器"""
+        """Initialize processors"""
         self.chunker = ChunkBuilder(
             strategy=self.config.chunking.strategy,
             chunk_size=self.config.chunking.chunk_size,
@@ -99,7 +99,7 @@ class RAGPipeline:
             min_chunk_size=self.config.chunking.min_chunk_size,
         )
         
-        # 构建分类器
+        # Build classifier
         taxonomy = {cat: [] for cat in self.config.classifier.taxonomy}
         self.classifier = CascadeClassifier(
             taxonomy=taxonomy,
@@ -108,8 +108,8 @@ class RAGPipeline:
         )
     
     def _init_integrations(self):
-        """初始化集成组件"""
-        # MiniMax API 客户端
+        """Initialize integration components"""
+        # MiniMax API client
         api_key = self.config.get_api_key("minimax")
         if api_key:
             self.minimax = MiniMaxClient(
@@ -121,9 +121,9 @@ class RAGPipeline:
             )
         else:
             self.minimax = None
-            logger.warning("未配置 MiniMax API Key，部分功能受限")
+            logger.warning("MiniMax API Key not configured, some features will be limited")
         
-        # Embedding 模型
+        # Embedding model
         try:
             self.embedding_model = EmbeddingModel(
                 model_name=self.config.embedding.model_name,
@@ -133,16 +133,16 @@ class RAGPipeline:
                 minimax_client=self.minimax,
             )
         except ImportError:
-            logger.warning("sentence-transformers 未安装，使用 MiniMax API")
+            logger.warning("sentence-transformers not installed, using MiniMax API")
             self.embedding_model = EmbeddingModel(
                 minimax_client=self.minimax
             )
         
-        # 质量评分器
+        # Quality scorer
         self.quality_scorer = QualityScorer(llm_client=self.minimax)
     
     def _init_indexers(self):
-        """初始化索引存储"""
+        """Initialize index storage"""
         vs_config = self.config.vector_store
         
         if vs_config.type == "qdrant":
@@ -158,70 +158,70 @@ class RAGPipeline:
                 collection=vs_config.qdrant.collection,
             )
         else:
-            raise ValueError(f"不支持的向量数据库类型: {vs_config.type}")
+            raise ValueError(f"Unsupported vector database type: {vs_config.type}")
     
     async def process(self, file_path: str) -> list[ProcessedChunk]:
         """
-        处理单个文档
+        Process a single document
         
         Args:
-            file_path: 文档路径（PDF / Word / Markdown）
+            file_path: Document path (PDF / Word / Markdown)
             
         Returns:
-            处理后的 Chunk 列表
+            List of processed chunks
         """
         path = Path(file_path)
         suffix = path.suffix.lower()
         
-        logger.info(f"处理文档: {path.name}")
+        logger.info(f"Processing document: {path.name}")
         self.stats["total_documents"] += 1
         
         try:
-            # Step 1: 解析
+            # Step 1: Parse
             raw_data = await self._parse_document(path, suffix)
             
-            # Step 2: 分块
+            # Step 2: Chunk
             chunks = await self._chunk_document(raw_data, str(path))
             
             if not chunks:
-                logger.warning(f"文档分块为空: {path.name}")
+                logger.warning(f"Document chunking produced no results: {path.name}")
                 return []
             
-            # Step 3: 实体+关系抽取（可选）
+            # Step 3: Entity + relation extraction (optional)
             if self.config.ner.enabled and self.minimax:
                 await self._extract_entities(chunks)
             
-            # Step 4: 分类（级联）
+            # Step 4: Classification (cascade)
             await self._classify_chunks(chunks)
             
-            # Step 5: 质量评分（可选）
+            # Step 5: Quality scoring (optional)
             if self.config.quality.enabled:
                 await self._score_quality(chunks)
             
-            # Step 6: 去重（可选）
+            # Step 6: Deduplication (optional)
             if self.config.dedup.enabled:
                 chunks = await self._deduplicate(chunks)
             
-            # Step 7: 过滤低质量
+            # Step 7: Filter low quality
             min_score = self.config.quality.min_quality_score
             chunks = [c for c in chunks 
                      if c.quality_score >= min_score]
             
-            # Step 8: 索引
+            # Step 8: Index
             await self._index_chunks(chunks)
             
             self.stats["total_chunks"] += len(chunks)
-            logger.info(f"文档处理完成: {path.name}, {len(chunks)} chunks")
+            logger.info(f"Document processed: {path.name}, {len(chunks)} chunks")
             
             return chunks
         
         except Exception as e:
-            logger.error(f"文档处理失败: {path.name}: {e}")
+            logger.error(f"Document processing failed: {path.name}: {e}")
             self.stats["failed_documents"] += 1
             return []
     
     async def _parse_document(self, path: Path, suffix: str) -> dict:
-        """解析文档"""
+        """Parse document"""
         if suffix == ".pdf":
             result = self.pdf_extractor.extract(str(path))
             return {
@@ -262,10 +262,10 @@ class RAGPipeline:
             }
         
         else:
-            raise ValueError(f"不支持的文件格式: {suffix}")
+            raise ValueError(f"Unsupported file format: {suffix}")
     
     async def _chunk_document(self, raw_data: dict, source: str) -> list[ProcessedChunk]:
-        """分块"""
+        """Chunk document"""
         text = raw_data.get("full_text", "")
         
         if not text:
@@ -273,7 +273,7 @@ class RAGPipeline:
         
         chunks = self.chunker.chunk_text(text, source=source)
         
-        # 构建 ProcessedChunk
+        # Build ProcessedChunk
         processed = []
         for chunk in chunks:
             processed.append(ProcessedChunk(
@@ -282,23 +282,23 @@ class RAGPipeline:
                 source=source,
                 page_number=chunk.page_number,
                 token_count=chunk.token_count,
-                quality_score=5.0,  # 默认分数
+                quality_score=5.0,  # Default score
             ))
         
         return processed
     
     async def _extract_entities(self, chunks: list[ProcessedChunk]):
-        """实体+关系抽取"""
+        """Entity + relation extraction"""
         if not self.minimax:
             return
         
-        # 批量抽取（每批 10 个 chunks）
+        # Batch extraction (10 chunks per batch)
         batch_size = 10
         
         for i in range(0, len(chunks), batch_size):
             batch = chunks[i:i + batch_size]
             
-            # 合并文本
+            # Combine text
             combined = "\n---\n".join([
                 f"[{j}] {c.content[:500]}"
                 for j, c in enumerate(batch)
@@ -309,14 +309,14 @@ class RAGPipeline:
             
             try:
                 schema = {
-                    "entities": ["技术名称", "组织", "人物", "概念", "事件"],
-                    "relations": ["属于", "使用", "基于", "相关于"]
+                    "entities": ["Technology Name", "Organization", "Person", "Concept", "Event"],
+                    "relations": ["belongs to", "uses", "based on", "related to"]
                 }
                 
                 result = self.minimax.extract_entities(combined, schema)
                 
                 for j, chunk in enumerate(batch):
-                    # 简单分配（每个 chunk 一部分）
+                    # Simple distribution (one part per chunk)
                     entities = result.get("entities", [])[j:j+1]
                     relations = result.get("relations", [])[j:j+1]
                     chunk.entities = entities
@@ -325,29 +325,29 @@ class RAGPipeline:
                     self.stats["total_entities"] += len(entities)
             
             except Exception as e:
-                logger.warning(f"实体抽取失败: {e}")
+                logger.warning(f"Entity extraction failed: {e}")
     
     async def _classify_chunks(self, chunks: list[ProcessedChunk]):
-        """批量分类"""
+        """Batch classification"""
         for chunk in chunks:
             result = self.classifier.classify(chunk.content)
             chunk.categories = [result.category]
     
     async def _score_quality(self, chunks: list[ProcessedChunk]):
-        """质量评分"""
+        """Quality scoring"""
         for chunk in chunks:
             score = self.quality_scorer.score(
                 chunk.content,
                 method="llm" if self.minimax else "rule"
             )
-            chunk.quality_score = score.score / 10.0  # 归一化到 0-1
+            chunk.quality_score = score.score / 10.0  # Normalize to 0-1
     
     async def _deduplicate(self, chunks: list[ProcessedChunk]) -> list[ProcessedChunk]:
         """
-        两层去重：MinHash 字面 + Embedding 语义
+        Two-layer deduplication: MinHash literal + Embedding semantic
         
         Returns:
-            去重后的 chunks
+            Deduplicated chunks
         """
         if len(chunks) < 2:
             return chunks
@@ -361,17 +361,17 @@ class RAGPipeline:
             
             is_dup = False
             
-            # Layer 1: MinHash（字面相似）
+            # Layer 1: MinHash (literal similarity)
             if dedup_config.method in ("minhash", "hybrid"):
                 for seen in seen_texts:
-                    # 简单字符重叠
+                    # Simple character overlap
                     overlap = len(set(text_preview) & set(seen)) 
                     jaccard = overlap / len(set(text_preview) | set(seen))
                     if jaccard > 0.9:
                         is_dup = True
                         break
             
-            # Layer 2: Embedding 语义（如果需要）
+            # Layer 2: Embedding semantic (if needed)
             if not is_dup and dedup_config.method in ("embedding", "hybrid"):
                 try:
                     emb = self.embedding_model.encode(chunk.content)
@@ -379,7 +379,7 @@ class RAGPipeline:
                     for seen_emb, seen_text in zip(seen_texts, seen_texts):
                         if seen_emb is None:
                             continue
-                        # 已有 embedding
+                        # Existing embedding
                     
                 except Exception:
                     pass
@@ -390,12 +390,12 @@ class RAGPipeline:
         
         removed = len(chunks) - len(keep)
         if removed > 0:
-            logger.info(f"去重完成: 移除 {removed} 个重复 chunks")
+            logger.info(f"Deduplication complete: removed {removed} duplicate chunks")
         
         return keep
     
     async def _index_chunks(self, chunks: list[ProcessedChunk]):
-        """索引到向量数据库"""
+        """Index to vector database"""
         if not chunks:
             return
         
@@ -417,7 +417,7 @@ class RAGPipeline:
                     }
                 })
             except Exception as e:
-                logger.warning(f"Embedding 生成失败: {e}")
+                logger.warning(f"Embedding generation failed: {e}")
         
         if items:
             self.vector_store.insert_batch(items)
@@ -429,15 +429,15 @@ class RAGPipeline:
         max_workers: int = 4,
     ) -> list[ProcessedChunk]:
         """
-        并行处理整个目录
+        Process entire directory in parallel
         
         Args:
-            directory: 目录路径
-            file_types: 要处理的文件类型
-            max_workers: 最大并发数
+            directory: Directory path
+            file_types: File types to process
+            max_workers: Maximum concurrency
             
         Returns:
-            所有处理后的 chunks
+            All processed chunks
         """
         dir_path = Path(directory)
         files = []
@@ -447,7 +447,7 @@ class RAGPipeline:
         
         files = [f for f in files if f.is_file()]
         
-        logger.info(f"找到 {len(files)} 个文件待处理")
+        logger.info(f"Found {len(files)} files to process")
         
         all_chunks = []
         
@@ -466,7 +466,7 @@ class RAGPipeline:
                 except Exception as e:
                     logger.error(f"❌ {f.name}: {e}")
         
-        logger.info(f"目录处理完成: {len(files)} 文件, "
+        logger.info(f"Directory processing complete: {len(files)} files, "
                     f"{len(all_chunks)} chunks")
         
         return all_chunks
@@ -478,17 +478,17 @@ class RAGPipeline:
         category_filter: str = None,
     ) -> list[dict]:
         """
-        检索相关 chunks
+        Retrieve relevant chunks
         
         Args:
-            question: 查询问题
-            k: 返回数量
-            category_filter: 可选，按分类过滤
+            question: Query question
+            k: Number of results to return
+            category_filter: Optional, filter by category
             
         Returns:
-            检索结果列表
+            List of retrieval results
         """
-        # 向量检索
+        # Vector search
         query_emb = self.embedding_model.encode(question)
         
         filter_expr = None
@@ -505,5 +505,5 @@ class RAGPipeline:
         return results
     
     def get_stats(self) -> dict:
-        """获取处理统计"""
+        """Get processing statistics"""
         return self.stats.copy()

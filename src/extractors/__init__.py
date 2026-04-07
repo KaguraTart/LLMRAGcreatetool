@@ -1,5 +1,5 @@
 """
-文档解析器模块
+Document Parser Module
 """
 
 from .pdf_extractor import PDFExtractor

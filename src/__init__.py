@@ -1,5 +1,5 @@
 """
-LLM RAGtools - RAG 知识库处理工具链
+LLM RAGtools - RAG Knowledge Base Processing Toolkit
 """
 
 __version__ = "0.1.0"

@@ -1,7 +1,7 @@
 """
-RAGtools 使用示例
+RAGtools Usage Examples
 
-本文件展示 LLM RAGtools 的各种使用方式
+This file demonstrates various ways to use LLM RAGtools
 """
 
 import asyncio
@@ -12,68 +12,68 @@ from src.pipeline import RAGPipeline
 
 
 async def demo_basic():
-    """基础使用：处理单个 PDF"""
+    """Basic usage: process a single PDF"""
     print("=" * 60)
-    print("Demo 1: 基础使用")
+    print("Demo 1: Basic Usage")
     print("=" * 60)
     
-    # 加载配置
+    # Load config
     config = Config.from_yaml("config.yaml")
     
-    # 初始化流程
+    # Initialize pipeline
     pipeline = RAGPipeline(config)
     
-    # 处理文档
+    # Process document
     pdf_path = "./examples/sample.pdf"
     
     if not Path(pdf_path).exists():
-        print(f"示例文件不存在: {pdf_path}")
-        print("跳过基础演示")
+        print(f"Sample file not found: {pdf_path}")
+        print("Skipping basic demo")
         return
     
     chunks = await pipeline.process(pdf_path)
     
-    print(f"\n结果: {len(chunks)} chunks")
+    print(f"\nResult: {len(chunks)} chunks")
     for chunk in chunks[:3]:
         print(f"  [{chunk.chunk_id}] {chunk.content[:100]}...")
 
 
 async def demo_corpus():
-    """批量处理目录"""
+    """Batch process directory"""
     print("\n" + "=" * 60)
-    print("Demo 2: 批量处理目录")
+    print("Demo 2: Batch Process Directory")
     print("=" * 60)
     
     config = Config.from_yaml("config.yaml")
     pipeline = RAGPipeline(config)
     
-    # 处理整个目录
+    # Process entire directory
     chunks = await pipeline.process_corpus(
         "./knowledge_base/",
         max_workers=4,
     )
     
     stats = pipeline.get_stats()
-    print(f"\n统计:")
+    print(f"\nStatistics:")
     for key, value in stats.items():
         print(f"  {key}: {value}")
 
 
 async def demo_query():
-    """检索"""
+    """Query/Retrieval"""
     print("\n" + "=" * 60)
-    print("Demo 3: 检索")
+    print("Demo 3: Query/Retrieval")
     print("=" * 60)
     
     config = Config.from_yaml("config.yaml")
     pipeline = RAGPipeline(config)
     
     results = await pipeline.query(
-        question="什么是 RAG？",
+        question="What is RAG?",
         k=5,
     )
     
-    print(f"\n找到 {len(results)} 条结果:")
+    print(f"\nFound {len(results)} results:")
     for i, r in enumerate(results):
         print(f"\n[{i+1}] Score: {r['score']:.3f}")
         print(r["content"][:200])
@@ -81,12 +81,12 @@ async def demo_query():
 
 async def demo_custom_pipeline():
     """
-    Demo 4: 自定义 Pipeline
+    Demo 4: Custom Pipeline
     
-    展示如何单独使用各模块
+    Shows how to use each module individually
     """
     print("\n" + "=" * 60)
-    print("Demo 4: 自定义 Pipeline")
+    print("Demo 4: Custom Pipeline")
     print("=" * 60)
     
     from src.config import Config
@@ -98,28 +98,28 @@ async def demo_custom_pipeline():
     
     config = Config.from_yaml("config.yaml")
     
-    # 单独使用 PDF 解析器
+    # Use PDF extractor individually
     pdf_extractor = PDFExtractor()
     result = pdf_extractor.extract("examples/sample.pdf")
-    print(f"PDF 解析: {result.total_pages} 页")
+    print(f"PDF parsed: {result.total_pages} pages")
     
-    # 单独使用分块器
+    # Use chunker individually
     chunker = ChunkBuilder(strategy="recursive", chunk_size=500)
     chunks = chunker.chunk_text(result.full_text)
-    print(f"分块: {len(chunks)} chunks")
+    print(f"Chunked: {len(chunks)} chunks")
     
-    # 单独使用 Embedding
+    # Use Embedding individually
     embed_model = EmbeddingModel(
         model_name=config.embedding.model_name,
-        device="cpu"  # 没用 GPU
+        device="cpu"  # Not using GPU
     )
     if chunks:
         embeddings = embed_model.encode([chunks[0].content])
-        print(f"Embedding 维度: {embeddings.shape}")
+        print(f"Embedding dimension: {embeddings.shape}")
 
 
 async def main():
-    """运行所有演示"""
+    """Run all demos"""
     try:
         await demo_basic()
         # await demo_corpus()
@@ -127,12 +127,12 @@ async def main():
         # await demo_custom_pipeline()
         
         print("\n" + "=" * 60)
-        print("所有演示完成!")
+        print("All demos complete!")
         print("=" * 60)
     
     except FileNotFoundError as e:
-        print(f"配置文件未找到: {e}")
-        print("请确保 config.yaml 存在")
+        print(f"Configuration file not found: {e}")
+        print("Please make sure config.yaml exists")
 
 
 if __name__ == "__main__":

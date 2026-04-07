@@ -1,5 +1,5 @@
 """
-外部工具集成模块
+External Tool Integration Module
 """
 
 from .minimax_api import MiniMaxClient
