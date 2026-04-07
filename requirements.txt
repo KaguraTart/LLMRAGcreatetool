@@ -34,3 +34,14 @@ pydantic>=2.5.0
 python-multipart>=0.0.6   # 文件上传
 pillow>=10.0.0            # 图片处理
 numpy>=1.26.0
+
+# Daemon & API
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+sse-starlette>=1.8.0
+
+# Vector DB (lightweight default)
+chromadb>=0.5.0
+
+# CLI
+click>=8.1.0
